@@ -1,0 +1,53 @@
+# Build results
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+[Ww][Ii][Nn]32/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+bld/
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+
+# Visual Studio generated files
+.vs/
+.vscode/
+.idea/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.ncrunch*
+_ReSharper*/
+*.DotSettings.user
+*.DotSettings
+
+# Test results
+[Tt]est[Rr]esult*/
+*.trx
+*.htmlresults
+
+# NuGet
+*.nupkg
+*.snupkg
+.nuget/
+packages/
+!**/packages/build/
+**/packages/*.lock.json
+
+# Rider
+.idea/
+*.sln.iml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Publish / output
+publish/
+artifacts/

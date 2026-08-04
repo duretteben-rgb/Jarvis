@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>Jarvis.Plugins.Example</RootNamespace>
+    <AssemblyName>Jarvis.Plugins.Example</AssemblyName>
+    <Description>Reference plugin demonstrating the JARVIS SDK contracts and EventBus communication.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Jarvis.SDK\Jarvis.SDK.csproj" />
+  </ItemGroup>
+
+</Project>
