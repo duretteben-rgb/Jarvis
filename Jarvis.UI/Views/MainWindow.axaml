@@ -1,0 +1,133 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:Jarvis.UI.ViewModels"
+        x:Class="Jarvis.UI.Views.MainWindow"
+        x:DataType="vm:MainViewModel"
+        Width="1080"
+        Height="680"
+        MinWidth="860"
+        MinHeight="540"
+        WindowStartupLocation="CenterScreen"
+        Title="JARVIS OS"
+        Background="#0D1117">
+    <Grid ColumnDefinitions="240,1,*">
+
+        <!-- Sidebar -->
+        <Border Grid.Column="0" Background="#161B22" Padding="22">
+            <StackPanel Spacing="10">
+                <StackPanel Margin="0,0,0,26">
+                    <TextBlock Text="JARVIS"
+                               FontSize="30"
+                               FontWeight="Bold"
+                               Foreground="#FFFFFF" />
+                    <TextBlock Text="OS"
+                               FontSize="13"
+                               Foreground="#58A6FF" />
+                </StackPanel>
+
+                <TextBlock Text="HUB" FontSize="11" Foreground="#8B949E" />
+                <TextBlock Text="Monitor" FontSize="14" Foreground="#C9D1D9" />
+                <TextBlock Text="Plugins" FontSize="14" Foreground="#C9D1D9" />
+                <TextBlock Text="Settings" FontSize="14" Foreground="#C9D1D9" />
+
+                <Rectangle Height="1" Fill="#21262D" Margin="0,18,0,10" />
+
+                <TextBlock Text="{Binding InstanceName}"
+                           FontSize="13"
+                           FontWeight="SemiBold"
+                           Foreground="#58A6FF" />
+                <TextBlock Text="v{ApplicationVersion}"
+                           FontSize="12"
+                           Foreground="#8B949E" />
+            </StackPanel>
+        </Border>
+
+        <!-- Divider -->
+        <Border Grid.Column="1" Background="#21262D" />
+
+        <!-- Main content -->
+        <ScrollViewer Grid.Column="2">
+            <StackPanel Margin="34" Spacing="18">
+
+                <StackPanel>
+                    <TextBlock Text="{Binding InstanceName}"
+                               FontSize="26"
+                               FontWeight="Bold"
+                               Foreground="#FFFFFF" />
+                    <TextBlock Text="System skeleton ready for extension."
+                               FontSize="13"
+                               Foreground="#8B949E" />
+                </StackPanel>
+
+                <!-- Status cards -->
+                <Grid ColumnDefinitions="*,*,*" ColumnSpacing="16">
+                    <Border Background="#161B22" CornerRadius="12" Padding="18">
+                        <StackPanel Spacing="6">
+                            <TextBlock Text="CORE" FontSize="11" Foreground="#8B949E" />
+                            <TextBlock Text="Online"
+                                       FontSize="22"
+                                       FontWeight="Bold"
+                                       Foreground="#3FB950" />
+                            <TextBlock Text="Modules and services"
+                                       FontSize="12"
+                                       Foreground="#C9D1D9" />
+                        </StackPanel>
+                    </Border>
+
+                    <Border Grid.Column="1" Background="#161B22" CornerRadius="12" Padding="18">
+                        <StackPanel Spacing="6">
+                            <TextBlock Text="EVENT BUS" FontSize="11" Foreground="#8B949E" />
+                            <TextBlock Text="{Binding EventBusStatus}"
+                                       FontSize="22"
+                                       FontWeight="Bold"
+                                       Foreground="#58A6FF" />
+                            <TextBlock Text="Heartbeat ticks"
+                                       FontSize="12"
+                                       Foreground="#C9D1D9" />
+                        </StackPanel>
+                    </Border>
+
+                    <Border Grid.Column="2" Background="#161B22" CornerRadius="12" Padding="18">
+                        <StackPanel Spacing="6">
+                            <TextBlock Text="PLUGINS" FontSize="11" Foreground="#8B949E" />
+                            <TextBlock Text="{Binding PluginCountText}"
+                                       FontSize="22"
+                                       FontWeight="Bold"
+                                       Foreground="#D29922" />
+                            <TextBlock Text="Loaded from the plugins directory"
+                                       FontSize="12"
+                                       Foreground="#C9D1D9" />
+                        </StackPanel>
+                    </Border>
+                </Grid>
+
+                <StackPanel>
+                    <TextBlock Text="SYSTEM FEED"
+                               FontSize="11"
+                               Foreground="#8B949E" />
+                    <TextBlock Text="{Binding HeartbeatSummary}"
+                               FontSize="13"
+                               Foreground="#C9D1D9" />
+                </StackPanel>
+
+                <TextBlock Text="LOADED PLUGINS"
+                           FontSize="11"
+                           Foreground="#8B949E" />
+                <ItemsControl ItemsSource="{Binding Plugins}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="x:String">
+                            <Border Background="#161B22"
+                                    CornerRadius="8"
+                                    Padding="14"
+                                    Margin="0,4">
+                                <TextBlock Text="{Binding}"
+                                           Foreground="#C9D1D9"
+                                           FontSize="13" />
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</Window>

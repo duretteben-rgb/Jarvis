@@ -1,0 +1,51 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Jarvis.SDK", "Jarvis.SDK\Jarvis.SDK.csproj", "{18C4898C-A59F-4169-8F91-D606E7D9933C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Jarvis.Core", "Jarvis.Core\Jarvis.Core.csproj", "{CF180D6C-A61A-40A6-A0D3-3AC8917AFA93}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Jarvis.Runtime", "Jarvis.Runtime\Jarvis.Runtime.csproj", "{3007EEA4-B83F-489E-837C-F1129E6AACD1}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Jarvis.Plugins", "Jarvis.Plugins", "{2EBCCE83-EF4E-4991-87B6-74FEFA1C712D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Jarvis.Plugins.Example", "Jarvis.Plugins\Jarvis.Plugins.Example\Jarvis.Plugins.Example.csproj", "{5549FA4F-C40F-4B1C-9F3B-5132EB18184A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Jarvis.UI", "Jarvis.UI\Jarvis.UI.csproj", "{8E8456BB-F93C-403A-B823-0DCB48F8DACB}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{18C4898C-A59F-4169-8F91-D606E7D9933C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{18C4898C-A59F-4169-8F91-D606E7D9933C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{18C4898C-A59F-4169-8F91-D606E7D9933C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{18C4898C-A59F-4169-8F91-D606E7D9933C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CF180D6C-A61A-40A6-A0D3-3AC8917AFA93}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CF180D6C-A61A-40A6-A0D3-3AC8917AFA93}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CF180D6C-A61A-40A6-A0D3-3AC8917AFA93}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CF180D6C-A61A-40A6-A0D3-3AC8917AFA93}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3007EEA4-B83F-489E-837C-F1129E6AACD1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3007EEA4-B83F-489E-837C-F1129E6AACD1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3007EEA4-B83F-489E-837C-F1129E6AACD1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3007EEA4-B83F-489E-837C-F1129E6AACD1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5549FA4F-C40F-4B1C-9F3B-5132EB18184A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5549FA4F-C40F-4B1C-9F3B-5132EB18184A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5549FA4F-C40F-4B1C-9F3B-5132EB18184A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5549FA4F-C40F-4B1C-9F3B-5132EB18184A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8E8456BB-F93C-403A-B823-0DCB48F8DACB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8E8456BB-F93C-403A-B823-0DCB48F8DACB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8E8456BB-F93C-403A-B823-0DCB48F8DACB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8E8456BB-F93C-403A-B823-0DCB48F8DACB}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{5549FA4F-C40F-4B1C-9F3B-5132EB18184A} = {2EBCCE83-EF4E-4991-87B6-74FEFA1C712D}
+	EndGlobalSection
+EndGlobal
