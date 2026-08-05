@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <RootNamespace>Jarvis.API</RootNamespace>
+    <AssemblyName>Jarvis.API</AssemblyName>
+    <Description>Web host for JARVIS OS. Exposes the core, memory and AI services as a REST/SSE API consumed by the JARVIS HUB and serves the Hub renderer for browser preview.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Jarvis.AI\Jarvis.AI.csproj" />
+    <ProjectReference Include="..\Jarvis.Core\Jarvis.Core.csproj" />
+    <ProjectReference Include="..\Jarvis.Memory\Jarvis.Memory.csproj" />
+    <ProjectReference Include="..\Jarvis.SDK\Jarvis.SDK.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="appsettings.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+  <!-- Serve the JARVIS HUB renderer as static files (browser preview + Electron shell). -->
+  <ItemGroup>
+    <Content Include="..\Jarvis.Hub\renderer\**\*.*"
+             Link="wwwroot\%(RecursiveDir)%(Filename)%(Extension)"
+             CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <Import Project="..\build\Jarvis.PluginDeploy.targets" />
+
+</Project>

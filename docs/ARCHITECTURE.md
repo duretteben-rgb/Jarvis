@@ -1,18 +1,22 @@
 # JARVIS OS — Architecture
 
 This document describes the architecture of JARVIS OS: a modular, extensible personal AI
-assistant platform written in C# / .NET 8. It covers the base skeleton plus the professional
-plugin system (permissions, versioning, dynamic loading, events) and the JARVIS memory system
-(SQLite, local embeddings, vector search, preferences).
+assistant platform written in C# / .NET 8. It covers the base skeleton, the professional
+plugin system (permissions, versioning, dynamic loading, events), the JARVIS memory system
+(SQLite, local embeddings, vector search, preferences), the local AI engine (multi-provider
+abstraction, model routing, context management) and the web/desktop shell (JARVIS API + HUB).
 
 ## Module layout
 
 ```
 Jarvis/
-├── Jarvis.SDK      # Public contracts: events, plugin interfaces, host API. No logic.
+├── Jarvis.SDK      # Public contracts: events, plugin interfaces, host API, AI contracts. No logic.
 ├── Jarvis.Core     # Engine: EventBus, ServiceManager, Configuration, Logging, DI, PluginManager.
 ├── Jarvis.Runtime  # Headless host: Startup, ProcessManager, BackgroundServices.
 ├── Jarvis.Memory   # SQLite-backed memory: embeddings, vector search, preferences.
+├── Jarvis.AI       # AI engine: providers (Ollama/OpenAI-compatible), model router, context.
+├── Jarvis.API      # REST + SSE host exposing memory, plugins and AI to any client.
+├── Jarvis.Hub      # Electron shell (Windows 11 Fluent/Mica) wrapping the API renderer.
 ├── Jarvis.Plugins  # Extension system. Each capability ships as a plugin.
 │   ├── Jarvis.Plugins.Example
 │   ├── Jarvis.Plugins.Minecraft
@@ -27,14 +31,18 @@ Jarvis/
 Only upward references are allowed. This keeps every module replaceable and testable.
 
 ```
-Jarvis.UI ─────────────┐
-Jarvis.Runtime ────────┤
-Jarvis.Memory ─────────┼──> Jarvis.SDK        (contracts only, no logic)
-Jarvis.Plugins.* ──────┤        ▲
-Jarvis.Core ───────────┘      (no other deps)
+Jarvis.Hub (Electron) ──┐
+Jarvis.API ─────────────┤
+Jarvis.AI ──────────────┤
+Jarvis.UI ──────────────┤
+Jarvis.Runtime ─────────┤
+Jarvis.Memory ──────────┼──> Jarvis.SDK        (contracts only, no logic)
+Jarvis.Plugins.* ───────┤        ▲
+Jarvis.Core ────────────┘      (no other deps)
 
-Jarvis.Core <── Jarvis.Runtime, Jarvis.UI
-Jarvis.Memory <── Jarvis.Runtime, Jarvis.UI
+Jarvis.Core <── Jarvis.Runtime, Jarvis.UI, Jarvis.API
+Jarvis.Memory <── Jarvis.Runtime, Jarvis.UI, Jarvis.API
+Jarvis.AI <── Jarvis.API
 ```
 
 - `Jarvis.SDK` depends on nothing but `Microsoft.Extensions.Logging.Abstractions`.
@@ -42,9 +50,16 @@ Jarvis.Memory <── Jarvis.Runtime, Jarvis.UI
   Configuration).
 - `Jarvis.Memory` depends on `Jarvis.SDK` + Microsoft.Data.Sqlite + Microsoft.Extensions
   (Options, DI abstractions, Logging).
+- `Jarvis.AI` depends on `Jarvis.SDK` + Microsoft.Extensions (Options, DI, Logging) +
+  `System.Net.Http` for provider calls. No model code ships in the engine; models live in
+  providers (Ollama locally, OpenAI-compatible cloud endpoints).
+- `Jarvis.API` depends on `Jarvis.AI`, `Jarvis.Core`, `Jarvis.Memory` + `Jarvis.SDK` and hosts
+  the ASP.NET Core web server.
+- `Jarvis.Hub` is a Node/Electron project; it talks to `Jarvis.API` over HTTP/SSE and shares
+  the same renderer that the API serves as static files.
 - `Jarvis.Runtime` and `Jarvis.UI` depend on `Jarvis.Core`, `Jarvis.Memory` + `Jarvis.SDK`.
-- Plugins depend only on `Jarvis.SDK` and are therefore fully decoupled from Core, Memory
-  and each other. New capabilities are added as plugins without touching Core.
+- Plugins depend only on `Jarvis.SDK` and are therefore fully decoupled from Core, Memory,
+  AI and each other. New capabilities are added as plugins without touching Core.
 
 ## Module responsibilities
 
@@ -62,6 +77,7 @@ communicate. Because plugins only see the SDK, the SDK is the stable public surf
 | `Services` | `IJarvisService` lifecycle contract |
 | `Configuration` | `IJarvisConfiguration` read-only view |
 | `Host` | `IJarvisHost` public API (config, event bus, permissions, commands, plugins) |
+| `AI` | `IAIService`, `ChatMessage`/`ChatRequest`/`ChatResponse`, `ChatChunk`, `AIProviderInfo`, `TaskKind` |
 
 ### Jarvis.Core
 
@@ -107,6 +123,53 @@ The self-contained memory system of JARVIS OS. It is registered by the runtime (
 Search pipeline: content -> embedding -> stored in SQLite; on search, the query is embedded
 and ranked against stored vectors with cosine similarity. Because embeddings are deterministic
 hashes, results are stable across restarts and no external service is required.
+
+### Jarvis.AI
+
+The local-first AI engine. It is registered via `AddJarvisAI()` and exposed to the rest of the
+system through `IAIService` in the SDK. It contains no model code of its own: everything is
+delegated to pluggable providers.
+
+| Folder | Responsibility |
+| --- | --- |
+| `AIProvider` | `IAIProvider` contract + `OllamaProvider` (local, offline) + `OpenAIProvider` (any OpenAI-compatible endpoint: Groq, Together, OpenAI...) |
+| `ModelRouter` | `ModelRouter`: health cache, failure cooldowns, task-kind tag matching, local-first ordering |
+| `ContextManager` | `ConversationContextManager`: in-memory sessions, token-budget trimming, LRU eviction |
+| `Configuration` | `AIOptions`: providers, model definitions, routing + context settings |
+| `DependencyInjection` | `AddJarvisAI()` registration and wiring |
+| `JarvisAIService` | `IAIService` implementation; fallback across candidates, session context recording |
+
+Routing: a `ChatRequest` optionally names a model id (from the `AI:Models` list) or a task
+kind (simple/complex/reasoning/coding/summarization). The router prefilters providers by cached
+health, orders local-first when `PreferLocal` is set, and matches model definitions by task
+kind tags. If a provider fails, the service falls back to the next healthy candidate, so the
+assistant keeps working offline even when the cloud is unreachable.
+
+### Jarvis.API
+
+The web/API host. It boots the same `JarvisHostFactory.Configure` bootstrap as the runtime and
+exposes everything over REST + Server-Sent Events:
+
+- `GET /api/health`, `GET /api/status` — liveness and system overview (plugins, memory, AI).
+- `GET /api/plugins`, `POST /api/plugins/{id}/commands/{command}` — plugin inspection and
+  command execution (parameters are normalized from JSON to primitives before dispatch).
+- `GET/POST /api/memory`, `/api/memory/recent`, `/api/memory/search` — memory CRUD + vector search.
+- `GET/POST/DELETE /api/memory/preferences[/{key}]` — preference store, including list-all.
+- `GET /api/ai/providers`, `GET /api/ai/models` — provider health and model definitions.
+- `POST /api/ai/chat` — non-streaming chat (JSON).
+- `POST /api/ai/chat/stream` — streaming chat (SSE, `data:` frames + `[DONE]`).
+- `POST /api/ai/sessions/{id}/clear` — clear a conversation session.
+
+It also serves the Hub renderer (`Jarvis.Hub/renderer/**`) as static files, so the same UI
+works in a browser and inside Electron. CORS is open so any client can connect.
+
+### Jarvis.Hub
+
+The premium desktop shell: an Electron app with a Windows 11 Fluent / Mica-inspired renderer
+(frameless window, custom titlebar, acrylic backdrop, light/dark themes). Views: Dashboard,
+Assistant (streaming chat with a caret indicator), Memory (entries + preferences), Plugins
+(command chips) and Settings. It talks to `Jarvis.API` via `window.jarvis` (contextBridge) and
+can spawn the API host itself if it is not already running.
 
 ### Jarvis.Plugins
 
@@ -218,7 +281,7 @@ knowledge and preferences survive host restarts.
 ## Build & run
 
 ```bash
-# Build everything. The runtime deploys all plugins into plugins/.
+# Build everything. The runtime and API deploy all plugins into plugins/.
 dotnet build Jarvis.sln
 
 # Run the headless runtime (heartbeats every 5 s, plugins loaded from plugins/)
@@ -232,14 +295,27 @@ dotnet run --project Jarvis.Runtime -- --Permissions:AllowAll=false --Permission
 
 # Run the desktop UI (needs a graphical session)
 dotnet run --project Jarvis.UI
+
+# Run the web/API host (http://localhost:5178, serves the Hub renderer too)
+dotnet run --project Jarvis.API
+
+# Point the AI engine at a local Ollama server (models auto-registered)
+dotnet run --project Jarvis.API -- --AI:Ollama:Enabled=true --AI:Ollama:BaseUrl=http://localhost:11434
+
+# Enable an OpenAI-compatible cloud provider (Groq/Together/OpenAI...)
+JARVIS_OPENAI_API_KEY=... dotnet run --project Jarvis.API -- --AI:OpenAI:Enabled=true \
+    --AI:OpenAI:BaseUrl=https://api.groq.com/openai/v1
+
+# Desktop Hub (needs npm install once)
+cd Jarvis.Hub && npm install && npm start
 ```
 
 ## Roadmap (future, per PROJECT_SPEC.md)
 
 Each item slots into an existing module without touching Core:
 
-- **AI orchestration**: local models (Ollama) and cloud connectors as Core services or an AI
-  plugin; richer embeddings backed by a real model in place of the hash provider.
+- **AI orchestration**: richer embeddings backed by a real model in place of the hash provider;
+  tool/function calling and more task-kind tags.
 - **Plugins**: System, Browser, Developer, Gaming, Media, Smart Home.
 - **UI**: conversation hub, monitor, settings screens wired to `IMemoryService` and commands.
-- **Tests**: `Jarvis.Tests` covering EventBus, PluginManager, permissions and memory.
+- **Tests**: `Jarvis.Tests` covering EventBus, PluginManager, permissions, memory and AI routing.

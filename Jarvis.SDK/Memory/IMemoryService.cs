@@ -34,6 +34,9 @@ public interface IMemoryService
     /// <summary>Reads a user preference, or null when it does not exist.</summary>
     Task<string?> GetPreferenceAsync(string key, CancellationToken cancellationToken = default);
 
+    /// <summary>Returns every stored user preference as a key/value map.</summary>
+    Task<IReadOnlyDictionary<string, string>> GetAllPreferencesAsync(CancellationToken cancellationToken = default);
+
     /// <summary>Removes a user preference. Returns true when it existed.</summary>
     Task<bool> RemovePreferenceAsync(string key, CancellationToken cancellationToken = default);
 }

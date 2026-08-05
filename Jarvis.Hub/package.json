@@ -1,0 +1,15 @@
+{
+  "name": "jarvis-hub",
+  "productName": "JARVIS HUB",
+  "version": "0.3.0",
+  "description": "Premium JARVIS HUB interface with a Windows 11 Fluent/Mica design. Communicates with the JARVIS OS core through the local JARVIS.API web host.",
+  "main": "main.js",
+  "author": "JARVIS Team",
+  "license": "MIT",
+  "scripts": {
+    "start": "electron ."
+  },
+  "devDependencies": {
+    "electron": "^32.0.0"
+  }
+}

@@ -6,5 +6,5 @@ namespace Jarvis.SDK;
 public static class JarvisVersions
 {
     /// <summary>Version of the public platform API exposed by <c>Jarvis.SDK</c>.</summary>
-    public const string Platform = "0.2.0";
+    public const string Platform = "0.3.0";
 }

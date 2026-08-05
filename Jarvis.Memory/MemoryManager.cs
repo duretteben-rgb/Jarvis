@@ -77,6 +77,9 @@ public sealed class MemoryManager : IMemoryService, IDisposable
     public Task<string?> GetPreferenceAsync(string key, CancellationToken cancellationToken = default)
         => _repository.GetPreferenceAsync(key, cancellationToken);
 
+    public Task<IReadOnlyDictionary<string, string>> GetAllPreferencesAsync(CancellationToken cancellationToken = default)
+        => _repository.GetAllPreferencesAsync(cancellationToken);
+
     public Task<bool> RemovePreferenceAsync(string key, CancellationToken cancellationToken = default)
         => _repository.RemovePreferenceAsync(key, cancellationToken);
 

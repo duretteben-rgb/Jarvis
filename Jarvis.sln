@@ -25,6 +25,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Jarvis.Plugins.Automation",
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Jarvis.Plugins.AI", "Jarvis.Plugins\Jarvis.Plugins.AI\Jarvis.Plugins.AI.csproj", "{C7C2EFE9-562A-46FE-BFE8-AB14B7830623}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Jarvis.AI", "Jarvis.AI\Jarvis.AI.csproj", "{6F22D1BA-9C49-4EB2-92C3-7531817634C0}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Jarvis.API", "Jarvis.API\Jarvis.API.csproj", "{4D0E3479-7AC1-4617-A386-B4CDCC3EA947}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -74,6 +78,14 @@ Global
 		{C7C2EFE9-562A-46FE-BFE8-AB14B7830623}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C7C2EFE9-562A-46FE-BFE8-AB14B7830623}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C7C2EFE9-562A-46FE-BFE8-AB14B7830623}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6F22D1BA-9C49-4EB2-92C3-7531817634C0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6F22D1BA-9C49-4EB2-92C3-7531817634C0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6F22D1BA-9C49-4EB2-92C3-7531817634C0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6F22D1BA-9C49-4EB2-92C3-7531817634C0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4D0E3479-7AC1-4617-A386-B4CDCC3EA947}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4D0E3479-7AC1-4617-A386-B4CDCC3EA947}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4D0E3479-7AC1-4617-A386-B4CDCC3EA947}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4D0E3479-7AC1-4617-A386-B4CDCC3EA947}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{5549FA4F-C40F-4B1C-9F3B-5132EB18184A} = {2EBCCE83-EF4E-4991-87B6-74FEFA1C712D}

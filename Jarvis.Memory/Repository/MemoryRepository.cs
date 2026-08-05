@@ -149,6 +149,24 @@ public sealed class MemoryRepository
             },
             cancellationToken);
 
+    public async Task<IReadOnlyDictionary<string, string>> GetAllPreferencesAsync(CancellationToken cancellationToken = default)
+        => await _database.ExecuteAsync<IReadOnlyDictionary<string, string>>(
+            connection =>
+            {
+                var result = new Dictionary<string, string>();
+                using SqliteCommand command = connection.CreateCommand();
+                command.CommandText = "SELECT key, value FROM memory_preferences ORDER BY key;";
+
+                using SqliteDataReader reader = command.ExecuteReader();
+                while (reader.Read())
+                {
+                    result[reader.GetString(0)] = reader.GetString(1);
+                }
+
+                return result;
+            },
+            cancellationToken);
+
     public async Task<bool> RemovePreferenceAsync(string key, CancellationToken cancellationToken = default)
         => await _database.ExecuteAsync<bool>(
             connection =>

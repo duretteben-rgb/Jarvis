@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>Jarvis.AI</RootNamespace>
+    <AssemblyName>Jarvis.AI</AssemblyName>
+    <Description>AI engine for JARVIS OS: multi-provider abstraction (local Ollama, OpenAI-compatible cloud) with intelligent model routing and conversation context.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Http" Version="8.0.1" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.2" />
+    <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="8.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Jarvis.SDK\Jarvis.SDK.csproj" />
+  </ItemGroup>
+
+</Project>

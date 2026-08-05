@@ -1,0 +1,29 @@
+<Project>
+
+  <!--
+    Build every plugin project and deploy its output into the host's output directory so the
+    plugin loader can discover it. Each plugin ends up in plugins/<AssemblyName>/. Imported by
+    Jarvis.Runtime and Jarvis.API.
+  -->
+  <Target Name="DeployPlugins" AfterTargets="Build" Condition="'$(Configuration)' != 'Publish'">
+    <ItemGroup>
+      <PluginProject Include="..\Jarvis.Plugins\*\*.csproj" />
+    </ItemGroup>
+    <MSBuild Projects="@(PluginProject)"
+             Targets="Build"
+             Properties="Configuration=$(Configuration)" />
+    <MSBuild Projects="$(MSBuildProjectFullPath)"
+             Targets="DeploySinglePlugin"
+             Properties="Configuration=$(Configuration);PluginDir=%(PluginProject.RootDir)%(PluginProject.Directory);PluginName=%(PluginProject.Filename)"
+             BuildInParallel="true" />
+  </Target>
+
+  <Target Name="DeploySinglePlugin" Condition="'$(Configuration)' != 'Publish'">
+    <ItemGroup>
+      <PluginOutput Include="$(PluginDir)bin\$(Configuration)\net8.0\**\*.*" />
+    </ItemGroup>
+    <Copy SourceFiles="@(PluginOutput)"
+          DestinationFiles="$(OutDir)plugins\$(PluginName)\%(RecursiveDir)%(Filename)%(Extension)" />
+  </Target>
+
+</Project>
