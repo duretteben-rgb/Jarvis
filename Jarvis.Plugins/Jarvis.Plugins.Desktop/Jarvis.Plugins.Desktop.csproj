@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>Jarvis.Plugins.Desktop</RootNamespace>
+    <AssemblyName>Jarvis.Plugins.Desktop</AssemblyName>
+    <Description>Desktop integration plugin for JARVIS OS: notifications, screenshots and desktop actions.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Jarvis.SDK\Jarvis.SDK.csproj" />
+  </ItemGroup>
+
+</Project>

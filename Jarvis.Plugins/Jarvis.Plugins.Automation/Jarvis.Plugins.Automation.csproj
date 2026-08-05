@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>Jarvis.Plugins.Automation</RootNamespace>
+    <AssemblyName>Jarvis.Plugins.Automation</AssemblyName>
+    <Description>Automation plugin for JARVIS OS: define and run scheduled or event-driven automations.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Jarvis.SDK\Jarvis.SDK.csproj" />
+  </ItemGroup>
+
+</Project>

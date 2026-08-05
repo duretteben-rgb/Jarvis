@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>Jarvis.Plugins.AI</RootNamespace>
+    <AssemblyName>Jarvis.Plugins.AI</AssemblyName>
+    <Description>AI plugin for JARVIS OS: model-backed chat and semantic memory integration.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Jarvis.SDK\Jarvis.SDK.csproj" />
+  </ItemGroup>
+
+</Project>

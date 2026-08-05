@@ -5,8 +5,8 @@ using Microsoft.Extensions.Logging;
 namespace Jarvis.Core.Plugins;
 
 /// <summary>
-/// Scans a directory tree for plugin assemblies. A plugin is expected to live in its own
-/// sub-directory named after the assembly (e.g. <c>plugins/My.Plugin/My.Plugin.dll</c>).
+/// Scans directories for plugin assemblies. A plugin is expected to live in its own
+/// directory named after the assembly (e.g. <c>plugins/My.Plugin/My.Plugin.dll</c>).
 /// </summary>
 public sealed class PluginLoader
 {
@@ -18,7 +18,7 @@ public sealed class PluginLoader
     }
 
     /// <summary>
-    /// Discovers all plugin types found under <paramref name="pluginsRootDirectory"/>.
+    /// Discovers plugins found in the sub-directories of <paramref name="pluginsRootDirectory"/>.
     /// Corrupt or unloadable assemblies are logged and skipped.
     /// </summary>
     public IReadOnlyList<PluginDescriptor> Discover(string pluginsRootDirectory)
@@ -33,38 +33,56 @@ public sealed class PluginLoader
 
         foreach (string directory in Directory.EnumerateDirectories(pluginsRootDirectory))
         {
-            string assemblyName = Path.GetFileName(directory);
-            string assemblyPath = Path.Combine(directory, assemblyName + ".dll");
-
-            if (!File.Exists(assemblyPath))
+            PluginDescriptor? descriptor = DiscoverSingle(directory);
+            if (descriptor is not null)
             {
-                _logger.LogDebug("Skipping {Directory}: no {Assembly} assembly found.", directory, assemblyPath);
-                continue;
-            }
-
-            try
-            {
-                var context = new PluginLoadContext(directory);
-                Assembly assembly = context.LoadFromAssemblyPath(assemblyPath);
-
-                Type[] candidateTypes = assembly.GetTypes()
-                    .Where(type =>
-                        typeof(IJarvisPlugin).IsAssignableFrom(type) &&
-                        type is { IsAbstract: false, IsInterface: false })
-                    .ToArray();
-
-                foreach (Type type in candidateTypes)
-                {
-                    descriptors.Add(new PluginDescriptor(type, directory, context));
-                    _logger.LogDebug("Discovered plugin {PluginType} from {Assembly}.", type.FullName, assemblyPath);
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to discover plugin in {Directory}.", directory);
+                descriptors.Add(descriptor);
             }
         }
 
         return descriptors;
+    }
+
+    /// <summary>
+    /// Discovers a single plugin located in <paramref name="pluginDirectory"/>, or null when the
+    /// directory does not contain a loadable plugin assembly.
+    /// </summary>
+    public PluginDescriptor? DiscoverSingle(string pluginDirectory)
+    {
+        string assemblyName = Path.GetFileName(pluginDirectory);
+        string assemblyPath = Path.Combine(pluginDirectory, assemblyName + ".dll");
+
+        if (!File.Exists(assemblyPath))
+        {
+            _logger.LogDebug("Skipping {Directory}: no {Assembly} assembly found.", pluginDirectory, assemblyPath);
+            return null;
+        }
+
+        try
+        {
+            var context = new PluginLoadContext(pluginDirectory);
+            Assembly assembly = context.LoadFromAssemblyPath(assemblyPath);
+
+            Type? pluginType = assembly.GetTypes()
+                .Where(type =>
+                    typeof(IJarvisPlugin).IsAssignableFrom(type) &&
+                    type is { IsAbstract: false, IsInterface: false })
+                .FirstOrDefault();
+
+            if (pluginType is null)
+            {
+                context.Unload();
+                _logger.LogDebug("No IJarvisPlugin implementation found in {Assembly}.", assemblyPath);
+                return null;
+            }
+
+            _logger.LogDebug("Discovered plugin {PluginType} from {Assembly}.", pluginType.FullName, assemblyPath);
+            return new PluginDescriptor(pluginType, pluginDirectory, context);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to discover plugin in {Directory}.", pluginDirectory);
+            return null;
+        }
     }
 }

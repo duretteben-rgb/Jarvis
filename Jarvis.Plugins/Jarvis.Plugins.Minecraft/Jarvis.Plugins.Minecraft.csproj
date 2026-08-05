@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>Jarvis.Plugins.Minecraft</RootNamespace>
+    <AssemblyName>Jarvis.Plugins.Minecraft</AssemblyName>
+    <Description>Minecraft server plugin for JARVIS OS: launch, stop and monitor Minecraft servers.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Jarvis.SDK\Jarvis.SDK.csproj" />
+  </ItemGroup>
+
+</Project>
