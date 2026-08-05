@@ -1,4 +1,5 @@
 using Jarvis.Core.Hosting;
+using Jarvis.Memory.DependencyInjection;
 using Jarvis.Runtime.ProcessManager;
 using Jarvis.SDK.Host;
 using Microsoft.Extensions.DependencyInjection;
@@ -17,10 +18,10 @@ public static class StartupRunner
     {
         HostApplicationBuilder builder = JarvisHostFactory.CreateJarvisHostBuilder(args);
 
-        // Runtime services.
-        // Runtime services.
+        // Runtime services: process management, heartbeats and the JARVIS memory system.
         builder.Services.AddSingleton<IProcessManager, global::Jarvis.Runtime.ProcessManager.ProcessManager>();
         builder.Services.AddHostedService<Jarvis.Core.Hosting.HeartbeatService>();
+        builder.Services.AddJarvisMemory(builder.Configuration);
 
         using IHost host = builder.Build();
         IJarvisHost jarvisHost = host.Services.GetRequiredService<IJarvisHost>();

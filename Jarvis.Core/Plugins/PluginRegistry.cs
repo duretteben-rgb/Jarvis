@@ -19,6 +19,14 @@ public sealed class PluginRegistry
         }
     }
 
+    public void Remove(IJarvisPlugin plugin)
+    {
+        lock (_gate)
+        {
+            _plugins.Remove(plugin);
+        }
+    }
+
     public void Clear()
     {
         lock (_gate)

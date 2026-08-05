@@ -26,6 +26,17 @@
           "Avalonia.X11": "11.3.18"
         }
       },
+      "Avalonia.Diagnostics": {
+        "type": "Direct",
+        "requested": "[11.3.18, )",
+        "resolved": "11.3.18",
+        "contentHash": "LQpL/zsaHpJ+mM1/ABmjPCQJbyyhtmTYuiPDCwTM6GVzyUne2InauVjAlFY5FaxgoHUx2ZDAkfJn3vdHn1/gsQ==",
+        "dependencies": {
+          "Avalonia": "11.3.18",
+          "Avalonia.Controls.ColorPicker": "11.3.18",
+          "Avalonia.Themes.Simple": "11.3.18"
+        }
+      },
       "Avalonia.Fonts.Inter": {
         "type": "Direct",
         "requested": "[11.3.18, )",
@@ -53,6 +64,15 @@
         "type": "Transitive",
         "resolved": "11.3.2",
         "contentHash": "qHDToxto1e3hci5YqbG9n0Ty8mlp3zBUN5wT66wKqaDVzXyQ0do3EnRILd4Ke9jpvsktaPpgE0YjEk7hornryQ=="
+      },
+      "Avalonia.Controls.ColorPicker": {
+        "type": "Transitive",
+        "resolved": "11.3.18",
+        "contentHash": "gcl2yQLQpS38Ur9MduD98GXzYaZEbwzYhaBmTh7Hp0YyXI4B2FlXXPdB4nijPI6WuoYdM24akdnF6uCeWL6q3Q==",
+        "dependencies": {
+          "Avalonia": "11.3.18",
+          "Avalonia.Remote.Protocol": "11.3.18"
+        }
       },
       "Avalonia.FreeDesktop": {
         "type": "Transitive",
@@ -88,6 +108,14 @@
           "SkiaSharp": "2.88.9",
           "SkiaSharp.NativeAssets.Linux": "2.88.9",
           "SkiaSharp.NativeAssets.WebAssembly": "2.88.9"
+        }
+      },
+      "Avalonia.Themes.Simple": {
+        "type": "Transitive",
+        "resolved": "11.3.18",
+        "contentHash": "aDCqBg6NnvUJOd9Ejt49htV6vwUIOV6K8jTNm7/bp9NqNr3h3xDR1vkw+Q48hm+ee8v6Gm4jiBy3g9O8k7Yv2w==",
+        "dependencies": {
+          "Avalonia": "11.3.18"
         }
       },
       "Avalonia.Win32": {

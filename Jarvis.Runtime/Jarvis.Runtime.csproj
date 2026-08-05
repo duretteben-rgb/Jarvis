@@ -13,6 +13,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Jarvis.Core\Jarvis.Core.csproj" />
+    <ProjectReference Include="..\Jarvis.Memory\Jarvis.Memory.csproj" />
     <ProjectReference Include="..\Jarvis.SDK\Jarvis.SDK.csproj" />
   </ItemGroup>
 
@@ -22,18 +23,27 @@
     </None>
   </ItemGroup>
 
-  <!-- Build the example plugin and deploy it into the runtime output so the plugin loader can discover it. -->
-  <Target Name="DeployExamplePlugin" AfterTargets="Build">
-    <MSBuild Projects="..\Jarvis.Plugins\Jarvis.Plugins.Example\Jarvis.Plugins.Example.csproj"
-             Targets="Build"
-             Properties="Configuration=$(Configuration)"
-             Condition="'$(Configuration)' != 'Publish'" />
+  <!-- Build every plugin project and deploy its output into the runtime output so the plugin
+       loader can discover it. Each plugin ends up in plugins/<AssemblyName>/. -->
+  <Target Name="DeployPlugins" AfterTargets="Build" Condition="'$(Configuration)' != 'Publish'">
     <ItemGroup>
-      <PluginFile Include="..\Jarvis.Plugins\Jarvis.Plugins.Example\bin\$(Configuration)\net8.0\**\*.*" />
+      <PluginProject Include="..\Jarvis.Plugins\*\*.csproj" />
     </ItemGroup>
-    <Copy SourceFiles="@(PluginFile)"
-          DestinationFiles="$(OutDir)plugins\Jarvis.Plugins.Example\%(RecursiveDir)%(Filename)%(Extension)"
-          Condition="'$(Configuration)' != 'Publish'" />
+    <MSBuild Projects="@(PluginProject)"
+             Targets="Build"
+             Properties="Configuration=$(Configuration)" />
+    <MSBuild Projects="$(MSBuildProjectFullPath)"
+             Targets="DeploySinglePlugin"
+             Properties="Configuration=$(Configuration);PluginDir=%(PluginProject.RootDir)%(PluginProject.Directory);PluginName=%(PluginProject.Filename)"
+             BuildInParallel="true" />
+  </Target>
+
+  <Target Name="DeploySinglePlugin" Condition="'$(Configuration)' != 'Publish'">
+    <ItemGroup>
+      <PluginOutput Include="$(PluginDir)bin\$(Configuration)\net8.0\**\*.*" />
+    </ItemGroup>
+    <Copy SourceFiles="@(PluginOutput)"
+          DestinationFiles="$(OutDir)plugins\$(PluginName)\%(RecursiveDir)%(Filename)%(Extension)" />
   </Target>
 
 </Project>

@@ -2,11 +2,13 @@ using Jarvis.Core.Configuration;
 using Jarvis.Core.EventBus;
 using Jarvis.Core.Host;
 using Jarvis.Core.Hosting;
+using Jarvis.Core.Permissions;
 using Jarvis.Core.Plugins;
 using Jarvis.Core.ServiceManager;
 using Jarvis.SDK.Configuration;
 using Jarvis.SDK.Events;
 using Jarvis.SDK.Host;
+using Jarvis.SDK.Permissions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
@@ -18,9 +20,10 @@ namespace Jarvis.Core.DependencyInjection;
 public static class JarvisServiceCollectionExtensions
 {
     /// <summary>
-    /// Adds the core JARVIS stack: configuration, event bus, service manager, plugin system
-    /// and the public host API. Also registers <see cref="PluginHostedService"/> so plugins
-    /// are loaded and stopped with the host.
+    /// Adds the core JARVIS stack: configuration, event bus, permission service, service
+    /// manager, plugin system and the public host API. Also registers
+    /// <see cref="PluginHostedService"/> and <see cref="PluginWatchService"/> so plugins are
+    /// loaded, watched and stopped with the host.
     /// </summary>
     public static IServiceCollection AddJarvisCore(this IServiceCollection services)
     {
@@ -31,6 +34,8 @@ public static class JarvisServiceCollectionExtensions
 
         services.TryAddSingleton<IEventBus, global::Jarvis.Core.EventBus.EventBus>();
 
+        services.TryAddSingleton<IPermissionService, PermissionService>();
+
         services.TryAddSingleton<PluginRegistry>();
         services.TryAddSingleton<PluginLoader>();
         services.TryAddSingleton<IPluginManager, PluginManager>();
@@ -40,6 +45,7 @@ public static class JarvisServiceCollectionExtensions
         services.TryAddSingleton<IJarvisHost, JarvisHost>();
 
         services.AddHostedService<PluginHostedService>();
+        services.AddHostedService<PluginWatchService>();
 
         return services;
     }

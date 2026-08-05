@@ -16,6 +16,9 @@ public abstract class JarvisPluginBase : IJarvisPlugin
     /// <inheritdoc />
     public virtual PluginManifest Manifest { get; protected set; } = null!;
 
+    /// <inheritdoc />
+    public virtual IReadOnlyList<PluginCommand> Commands => Array.Empty<PluginCommand>();
+
     /// <summary>Current lifecycle state of this plugin.</summary>
     public PluginLifecycleState State { get; private set; } = PluginLifecycleState.Detected;
 
@@ -55,6 +58,13 @@ public abstract class JarvisPluginBase : IJarvisPlugin
         await OnDisposeAsync();
         GC.SuppressFinalize(this);
     }
+
+    /// <inheritdoc />
+    public virtual Task<object?> ExecuteCommandAsync(
+        string command,
+        IReadOnlyDictionary<string, object?>? parameters = null,
+        CancellationToken cancellationToken = default)
+        => throw new PluginException(Manifest.Id, $"Unknown command '{command}'.");
 
     /// <summary>Override to run setup logic after the context is assigned.</summary>
     protected virtual Task OnInitializeAsync(CancellationToken cancellationToken) => Task.CompletedTask;

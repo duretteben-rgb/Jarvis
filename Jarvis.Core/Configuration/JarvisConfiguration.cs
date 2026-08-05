@@ -11,16 +11,22 @@ public sealed class JarvisConfiguration : IJarvisConfiguration
 {
     private readonly IConfiguration _configuration;
     private readonly Lazy<PluginOptions> _plugins;
+    private readonly Lazy<PermissionOptions> _permissions;
 
     public JarvisConfiguration(IConfiguration configuration)
     {
         _configuration = configuration;
         _plugins = new Lazy<PluginOptions>(() =>
             configuration.GetSection("Plugins").Get<PluginOptions>() ?? new PluginOptions());
+        _permissions = new Lazy<PermissionOptions>(() =>
+            configuration.GetSection("Permissions").Get<PermissionOptions>() ?? new PermissionOptions());
     }
 
     /// <summary>Typed access to the <c>Plugins</c> section.</summary>
     public PluginOptions Plugins => _plugins.Value;
+
+    /// <summary>Typed access to the <c>Permissions</c> section.</summary>
+    public PermissionOptions Permissions => _permissions.Value;
 
     /// <summary>Typed access to the <c>Jarvis</c> section.</summary>
     public JarvisOptions Jarvis => GetSection<JarvisOptions>("Jarvis") ?? new JarvisOptions();
