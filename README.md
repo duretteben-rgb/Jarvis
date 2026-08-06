@@ -3,11 +3,12 @@
 A modular, extensible personal AI assistant platform inspired by JARVIS. Written in
 C# on .NET 8.
 
-> Status: **plugin system + memory + local AI engine + HUB shell**. The repository contains the
-> modular foundation (Core, Runtime, SDK, plugin system with permissions/versioning/events,
-> dynamic loading), the JARVIS memory system (SQLite, local embeddings, vector search,
-> preferences), a local-first AI engine (Ollama + OpenAI-compatible providers, model routing,
-> conversation context), a REST/SSE API host and an Electron HUB with a Windows 11 Fluent/Mica UI.
+> Status: **plugin system + memory + local AI engine + HUB shell + PC control**. The repository
+> contains the modular foundation (Core, Runtime, SDK, plugin system with
+> permissions/versioning/events, dynamic loading), the JARVIS memory system (SQLite, local
+> embeddings, vector search, preferences), a local-first AI engine (Ollama + OpenAI-compatible
+> providers, model routing, conversation context), a REST/SSE API host, an Electron HUB with a
+> Windows 11 Fluent/Mica UI, and a PC-control plugin (processes, files, hardware, apps).
 
 ## Structure
 
@@ -20,7 +21,7 @@ Jarvis/
 ├── Jarvis.AI       # AI engine: Ollama + OpenAI-compatible providers, model router, context
 ├── Jarvis.API      # REST + SSE host: memory, plugins, AI (also serves the HUB renderer)
 ├── Jarvis.Hub      # Electron shell (Windows 11 Fluent/Mica) wrapping the API renderer
-├── Jarvis.Plugins  # Plugin system (Example, Minecraft, Desktop, Automation, AI)
+├── Jarvis.Plugins  # Plugin system (Example, Minecraft, Desktop, System, Automation, AI)
 └── Jarvis.UI       # Desktop interface (Avalonia)
 ```
 
@@ -74,6 +75,7 @@ The AI engine works offline with a local Ollama server
 | --- | --- | --- |
 | Minecraft | `minecraft.launch`, `minecraft.stop`, `minecraft.status` | processes, files |
 | Desktop | `desktop.notify`, `desktop.screenshot` | ui, system |
+| System | `system.process.list`/`info`/`start`/`kill`, `system.file.list`/`read`/`write`/`copy`/`move`/`search`, `system.app.launch`/`stop`/`running`, `system.hardware.metrics` | processes, files, system |
 | Automation | `automation.list`, `automation.add`, `automation.run` | automation |
 | AI | `ai.remember`, `ai.search`, `ai.set-preference`, `ai.get-preference` | ai, memory |
 

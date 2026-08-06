@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>Jarvis.Plugins.System</RootNamespace>
+    <AssemblyName>Jarvis.Plugins.System</AssemblyName>
+    <Description>PC control plugin for JARVIS OS: processes, files, hardware monitoring and application launching.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Jarvis.SDK\Jarvis.SDK.csproj" />
+  </ItemGroup>
+
+</Project>

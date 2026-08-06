@@ -21,6 +21,7 @@ Jarvis/
 │   ├── Jarvis.Plugins.Example
 │   ├── Jarvis.Plugins.Minecraft
 │   ├── Jarvis.Plugins.Desktop
+│   ├── Jarvis.Plugins.System
 │   ├── Jarvis.Plugins.Automation
 │   └── Jarvis.Plugins.AI
 └── Jarvis.UI       # Desktop interface (Avalonia).
@@ -181,6 +182,9 @@ Built-in plugins (each is a feature added without touching Core):
 
 - `Jarvis.Plugins.Minecraft` — launch/stop/status of a Minecraft server (`processes`).
 - `Jarvis.Plugins.Desktop` — notifications, screenshots, desktop actions (`ui`, `system`).
+- `Jarvis.Plugins.System` — process/file/hardware/application control: list and stop processes,
+  list/read/write/copy/move/search files, launch/stop apps and report CPU/RAM/disk/uptime
+  metrics (`processes`, `files`, `system`).
 - `Jarvis.Plugins.Automation` — register, list and run automations (`automation`).
 - `Jarvis.Plugins.AI` — semantic memory commands backed by `IMemoryService` (`ai`, `memory`).
 - `Jarvis.Plugins.Example` — reference plugin demonstrating the SDK and the EventBus.
