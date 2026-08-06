@@ -17,6 +17,7 @@ const state = {
   sessionId: localStorage.getItem('jarvis.session') || crypto.randomUUID(),
   chatHistory: [],
   models: [],
+  providers: [],
   plugins: [],
   streaming: false,
 };
@@ -173,8 +174,17 @@ async function renderRecentMemories(container) {
 
 async function renderChat() {
   const container = $('#view-chat');
-  const modelOptions = state.models
-    .map((model) => `<option value="${escapeHtml(model.id)}">${escapeHtml(model.displayName || model.id)}</option>`)
+  const providerNames = Object.fromEntries((state.providers || []).map((provider) => [provider.id, provider.displayName]));
+  const groups = {};
+  state.models.forEach((model) => {
+    const label = providerNames[model.provider] || model.provider || 'Other';
+    (groups[label] ||= []).push(model);
+  });
+  const modelOptions = Object.entries(groups)
+    .map(([groupName, models]) => `
+      <optgroup label="${escapeHtml(groupName)}">
+        ${models.map((model) => `<option value="${escapeHtml(model.id)}">${escapeHtml(model.displayName || model.id)}${model.isDefault ? ' · default' : ''}</option>`).join('')}
+      </optgroup>`)
     .join('');
 
   container.innerHTML = `
@@ -471,12 +481,20 @@ function openCommandModal(pluginId, command) {
       <div class="modal-title">${escapeHtml(command)}</div>
       <p style="color:var(--text-secondary);margin-bottom:14px">${escapeHtml(definition?.description || '')}</p>
       <div class="field"><label>Parameters (optional JSON object)</label><textarea id="cmd-params"></textarea></div>
+      <div id="cmd-result" class="cmd-result" hidden></div>
       <div class="modal-actions">
         <button class="btn btn-ghost" data-modal-close>Cancel</button>
         <button class="btn btn-primary" id="cmd-run">Run</button>
       </div>
     </div>`;
   backdrop.classList.add('is-open');
+
+  const resultBox = $('#cmd-result');
+  const showResult = (kind, text) => {
+    resultBox.hidden = false;
+    resultBox.className = `cmd-result ${kind}`;
+    resultBox.textContent = text;
+  };
 
   const close = () => backdrop.classList.remove('is-open');
   backdrop.addEventListener('click', (event) => { if (event.target === backdrop) close(); });
@@ -486,21 +504,26 @@ function openCommandModal(pluginId, command) {
     let parameters = {};
     const raw = $('#cmd-params').value.trim();
     if (raw) {
-      try { parameters = JSON.parse(raw); } catch { alert('Invalid JSON parameters.'); return; }
+      try { parameters = JSON.parse(raw); } catch { showResult('err', 'Invalid JSON parameters.'); return; }
     }
 
-    $('#cmd-run').disabled = true;
+    const runButton = $('#cmd-run');
+    runButton.disabled = true;
+    resultBox.hidden = true;
     try {
       const response = await api(`/plugins/${encodeURIComponent(pluginId)}/commands/${encodeURIComponent(command)}`, {
         method: 'POST',
         body: JSON.stringify({ parameters }),
       });
-      alert(response.success ? `Result: ${response.result}` : `Error: ${response.error}`);
+      if (response.success) {
+        showResult('ok', response.result || 'Command completed.');
+      } else {
+        showResult('err', response.error || 'Command failed.');
+      }
     } catch (error) {
-      alert(error.message);
+      showResult('err', error.message);
     } finally {
-      $('#cmd-run').disabled = false;
-      close();
+      runButton.disabled = false;
     }
   });
 }
@@ -539,10 +562,24 @@ async function renderSettings() {
           <div id="settings-models" style="color:var(--text-tertiary);font-size:12.5px"><div class="spinner"></div></div>
         </div>
       </div>
+    </div>
+    <div class="card">
+      <div class="card-title">AI providers</div>
+      <div id="settings-providers"><div class="spinner"></div></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Connection</div>
       <div class="setting-row">
         <div>
-          <div>Cloud API key</div>
-          <div style="color:var(--text-tertiary);font-size:12.5px">Set <code>JARVIS_OPENAI_API_KEY</code> (e.g. a free Groq key) or <code>AI:OpenAI:ApiKey</code> to enable cloud models.</div>
+          <div>API host</div>
+          <div style="color:var(--text-tertiary);font-size:12.5px">JARVIS.API web host used by this interface</div>
+        </div>
+        <div style="font-family:monospace;font-size:13px">${escapeHtml(API_BASE)}</div>
+      </div>
+      <div class="setting-row">
+        <div>
+          <div>Cloud API keys</div>
+          <div style="color:var(--text-tertiary);font-size:12.5px">Set per-provider keys in <code>AI:OpenAICompat</code> or via env vars (<code>JARVIS_OPENAI_API_KEY</code>, <code>JARVIS_OPENROUTER_API_KEY</code>, <code>JARVIS_GEMINI_API_KEY</code>, ...). Local Ollama needs no key.</div>
         </div>
         <button class="btn btn-ghost" id="btn-test">Test connection</button>
       </div>
@@ -573,6 +610,8 @@ async function renderSettings() {
   } catch (error) {
     $('#settings-models').textContent = error.message;
   }
+
+  renderProviderList($('#settings-providers'));
 }
 
 /* ---------- modal shell --------------------------------------- */
@@ -613,6 +652,10 @@ async function boot() {
   try {
     state.models = await api('/ai/models');
   } catch { state.models = []; }
+
+  try {
+    state.providers = await api('/ai/providers');
+  } catch { state.providers = []; }
 
   checkConnection();
   setInterval(checkConnection, 15000);
