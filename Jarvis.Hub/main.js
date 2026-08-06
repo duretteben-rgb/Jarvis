@@ -27,10 +27,6 @@ function isApiRunning() {
 // relative to this app in a repository checkout, so failures degrade gracefully to the
 // renderer's "API offline" banner.
 function startApiIfNeeded() {
-  if (!app.isPackaged) {
-    return;
-  }
-
   isApiRunning().then((running) => {
     if (running) {
       return;

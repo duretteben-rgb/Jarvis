@@ -17,6 +17,7 @@ public static class Program
     {
         WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
         builder.WebHost.UseContentRoot(AppContext.BaseDirectory);
+        builder.Configuration.AddJsonFile("appsettings.local.json", optional: true, reloadOnChange: false);
 
         JarvisHostFactory.Configure(builder.Logging, builder.Services);
         builder.Services.AddJarvisMemory(builder.Configuration);

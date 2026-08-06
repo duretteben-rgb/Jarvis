@@ -51,3 +51,12 @@ Thumbs.db
 # Publish / output
 publish/
 artifacts/
+
+# Local-only configuration (secrets, personal keys) - never commit
+*.local.json
+*.local.config
+
+# Node / Electron
+node_modules/
+dist/
+

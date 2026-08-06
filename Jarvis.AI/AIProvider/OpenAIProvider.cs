@@ -11,28 +11,28 @@ namespace Jarvis.AI.AIProvider;
 /// <summary>
 /// Cloud AI provider speaking the OpenAI-compatible chat completions protocol. Because the
 /// protocol is a de-facto standard, this single provider works with Groq, OpenAI, Together,
-/// LocalAI and many other backends - all it needs is a base URL and an API key.
+/// OpenRouter, Google Gemini, DeepSeek, LocalAI and many other backends - all it needs is a
+/// base URL and an API key. Each <see cref="OpenAICompatibleOptions"/> entry becomes its own
+/// provider instance.
 /// </summary>
 public sealed class OpenAIProvider : IAIProvider
 {
-    private const string ApiKeyEnvironmentVariable = "JARVIS_OPENAI_API_KEY";
-
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly OpenAICompatibleOptions _options;
     private readonly ILogger<OpenAIProvider> _logger;
 
     public OpenAIProvider(
         IHttpClientFactory httpClientFactory,
-        IOptions<AIOptions> options,
+        OpenAICompatibleOptions options,
         ILogger<OpenAIProvider> logger)
     {
         _httpClientFactory = httpClientFactory;
-        _options = options.Value.OpenAI;
+        _options = options;
         _logger = logger;
     }
 
     /// <inheritdoc />
-    public string Id => "openai";
+    public string Id => _options.Id;
 
     /// <inheritdoc />
     public string DisplayName => _options.DisplayName;
@@ -42,7 +42,7 @@ public sealed class OpenAIProvider : IAIProvider
 
     private string? ApiKey => !string.IsNullOrWhiteSpace(_options.ApiKey)
         ? _options.ApiKey
-        : Environment.GetEnvironmentVariable(ApiKeyEnvironmentVariable);
+        : Environment.GetEnvironmentVariable(_options.EnvironmentVariable);
 
     /// <inheritdoc />
     public async Task<ProviderHealth> CheckHealthAsync(CancellationToken cancellationToken = default)
@@ -51,7 +51,7 @@ public sealed class OpenAIProvider : IAIProvider
         if (string.IsNullOrWhiteSpace(apiKey))
         {
             return ProviderHealth.Fail(
-                $"No API key configured. Set '{ApiKeyEnvironmentVariable}' or the AI:OpenAI:ApiKey setting.");
+                $"No API key configured. Set '{_options.EnvironmentVariable}' or the AI:{_options.Id}:ApiKey setting.");
         }
 
         try

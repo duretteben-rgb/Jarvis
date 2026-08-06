@@ -6,6 +6,8 @@ using Jarvis.SDK.AI;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace Jarvis.AI.DependencyInjection;
 
@@ -34,10 +36,6 @@ public static class JarvisAIExtensions
         {
             client.Timeout = TimeSpan.FromMinutes(5);
         });
-        services.AddHttpClient("openai", client =>
-        {
-            client.Timeout = TimeSpan.FromMinutes(5);
-        });
 
         AIOptions options = configuration.GetSection("AI").Get<AIOptions>() ?? new AIOptions();
 
@@ -46,9 +44,30 @@ public static class JarvisAIExtensions
             services.TryAddEnumerable(ServiceDescriptor.Singleton<IAIProvider, OllamaProvider>());
         }
 
+        // One provider instance per enabled OpenAI-compatible entry. The legacy AI:OpenAI
+        // section is treated as an implicit first entry so existing configurations keep working.
+        var openAiCompatEntries = new List<OpenAICompatibleOptions>();
         if (options.OpenAI.Enabled)
         {
-            services.TryAddEnumerable(ServiceDescriptor.Singleton<IAIProvider, OpenAIProvider>());
+            openAiCompatEntries.Add(options.OpenAI);
+        }
+
+        openAiCompatEntries.AddRange(options.OpenAICompat.Where(entry => entry.Enabled));
+
+        foreach (OpenAICompatibleOptions entry in openAiCompatEntries)
+        {
+            OpenAICompatibleOptions captured = entry;
+            string clientName = $"openai-{captured.Id}";
+            services.AddHttpClient(clientName, client =>
+            {
+                client.Timeout = TimeSpan.FromMinutes(5);
+            });
+
+            services.AddSingleton<IAIProvider>(
+                serviceProvider => new OpenAIProvider(
+                    serviceProvider.GetRequiredService<IHttpClientFactory>(),
+                    captured,
+                    serviceProvider.GetRequiredService<ILogger<OpenAIProvider>>()));
         }
 
         services.TryAddSingleton<ModelRouter>();

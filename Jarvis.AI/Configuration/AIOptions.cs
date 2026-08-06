@@ -15,6 +15,13 @@ public sealed class AIOptions
     /// <summary>OpenAI-compatible cloud provider settings (works with Groq, OpenAI, ...).</summary>
     public OpenAICompatibleOptions OpenAI { get; set; } = new();
 
+    /// <summary>
+    /// Additional OpenAI-compatible cloud providers. Each entry is registered as its own provider
+    /// (Groq, OpenRouter, Google Gemini, DeepSeek, Together, Cerebras, ... all speak the same
+    /// chat-completions protocol) and participates in model routing like the built-ins.
+    /// </summary>
+    public List<OpenAICompatibleOptions> OpenAICompat { get; set; } = new();
+
     /// <summary>Models available to the router. Each entry points at a provider + model id.</summary>
     public List<ModelDefinition> Models { get; set; } = new();
 
@@ -48,9 +55,12 @@ public sealed class OllamaOptions
     public string Model { get; set; } = "llama3.2";
 }
 
-/// <summary>Settings for the OpenAI-compatible cloud provider.</summary>
+/// <summary>Settings for an OpenAI-compatible cloud provider.</summary>
 public sealed class OpenAICompatibleOptions
 {
+    /// <summary>Unique provider id used by model definitions and the router.</summary>
+    public string Id { get; set; } = "openai";
+
     /// <summary>Whether the provider is enabled. Off by default until an API key is provided.</summary>
     public bool Enabled { get; set; } = false;
 
@@ -61,10 +71,14 @@ public sealed class OpenAICompatibleOptions
     public string BaseUrl { get; set; } = "https://api.groq.com/openai/v1";
 
     /// <summary>
-    /// API key. Leave empty to fall back to the <c>JARVIS_OPENAI_API_KEY</c> environment
-    /// variable. Keys are never required for local providers.
+    /// API key. Leave empty to fall back to the environment variable named by
+    /// <see cref="EnvironmentVariable"/> (default <c>JARVIS_OPENAI_API_KEY</c>). Keys are never
+    /// required for local providers.
     /// </summary>
     public string? ApiKey { get; set; }
+
+    /// <summary>Environment variable that holds the API key when <see cref="ApiKey"/> is empty.</summary>
+    public string EnvironmentVariable { get; set; } = "JARVIS_OPENAI_API_KEY";
 
     /// <summary>Default model used when no routed model is configured.</summary>
     public string Model { get; set; } = "llama-3.3-70b-versatile";
