@@ -154,6 +154,8 @@ exposes everything over REST + Server-Sent Events:
 - `GET /api/health`, `GET /api/status` — liveness and system overview (plugins, memory, AI).
 - `GET /api/plugins`, `POST /api/plugins/{id}/commands/{command}` — plugin inspection and
   command execution (parameters are normalized from JSON to primitives before dispatch).
+  Command responses carry both a readable `result` text (enumerables are joined line by line)
+  and, for structured plugin results, a `data` field that richer clients can render.
 - `GET/POST /api/memory`, `/api/memory/recent`, `/api/memory/search` — memory CRUD + vector search.
 - `GET/POST/DELETE /api/memory/preferences[/{key}]` — preference store, including list-all.
 - `GET /api/ai/providers`, `GET /api/ai/models` — provider health and model definitions.
@@ -169,8 +171,10 @@ works in a browser and inside Electron. CORS is open so any client can connect.
 The premium desktop shell: an Electron app with a Windows 11 Fluent / Mica-inspired renderer
 (frameless window, custom titlebar, acrylic backdrop, light/dark themes). Views: Dashboard,
 Assistant (streaming chat with a caret indicator), Memory (entries + preferences), Plugins
-(command chips) and Settings. It talks to `Jarvis.API` via `window.jarvis` (contextBridge) and
-can spawn the API host itself if it is not already running.
+(command chips), System (PC control: hardware meters, searchable processes with kill actions,
+a file browser with inline previews, and an application launcher) and Settings. It talks to
+`Jarvis.API` via `window.jarvis` (contextBridge) and can spawn the API host itself if it is not
+already running.
 
 ### Jarvis.Plugins
 

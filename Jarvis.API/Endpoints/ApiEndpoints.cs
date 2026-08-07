@@ -81,7 +81,14 @@ public static class ApiEndpoints
             try
             {
                 object? result = await host.ExecuteCommandAsync(pluginId, command, NormalizeParameters(request.Parameters));
-                return Results.Ok(new { success = true, result = result?.ToString() });
+                bool isPlainText = result is null || result is string;
+                return Results.Ok(new
+                {
+                    success = true,
+                    result = ToResultText(result),
+                    // Structured payload for richer clients; null when the result is plain text.
+                    data = isPlainText ? null : result,
+                });
             }
             catch (Exception exception)
             {
@@ -90,6 +97,36 @@ public static class ApiEndpoints
                     statusCode: StatusCodes.Status400BadRequest);
             }
         });
+    }
+
+    /// <summary>
+    /// Converts a command result into a readable text summary. Enumerables are joined line by
+    /// line so list-producing commands render as text for simple clients.
+    /// </summary>
+    private static string ToResultText(object? result)
+    {
+        if (result is null)
+        {
+            return string.Empty;
+        }
+
+        if (result is string text)
+        {
+            return text;
+        }
+
+        if (result is System.Collections.IEnumerable sequence)
+        {
+            var lines = new List<string>();
+            foreach (object? item in sequence)
+            {
+                lines.Add(item?.ToString() ?? string.Empty);
+            }
+
+            return lines.Count == 0 ? "(no results)" : string.Join('\n', lines);
+        }
+
+        return result.ToString() ?? string.Empty;
     }
 
     /// <summary>

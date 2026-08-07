@@ -66,6 +66,9 @@ The AI engine works offline with a local Ollama server
 - Chats through `IAIService`: model routing by task kind (simple/complex/reasoning/coding/
   summarization), local-first preference, health-based fallback and session context.
 - Streams chat completions to the HUB over Server-Sent Events.
+- HUB includes a System panel (hardware meters, searchable process table with kill actions,
+  file browser with inline previews, and an application launcher) driven by the
+  `jarvis.system` plugin over the REST API.
 - Publishes heartbeat events on the EventBus; plugins and the UI react to them.
 - Shuts down gracefully (Ctrl+C stops the runtime, stops plugins, unloads assemblies).
 

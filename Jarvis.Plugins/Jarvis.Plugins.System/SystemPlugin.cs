@@ -56,14 +56,14 @@ public sealed class SystemPlugin : JarvisPluginBase
             {
                 string query = GetString(parameters, "name") ?? GetString(parameters, "query") ?? string.Empty;
                 int limit = GetInt(parameters, "limit") ?? 100;
-                return Join(ProcessManager.List(query, Math.Clamp(limit, 1, 500)));
+                return ProcessManager.List(query, Math.Clamp(limit, 1, 500));
             }
 
             case "system.process.info":
             {
                 string idOrName = Required(parameters, "id");
-                return ProcessManager.Find(idOrName)?.ToString()
-                    ?? $"No process found for '{idOrName}'.";
+                ProcessInfo? info = ProcessManager.Find(idOrName);
+                return info is not null ? (object)info : $"No process found for '{idOrName}'.";
             }
 
             case "system.process.start":
@@ -85,7 +85,7 @@ public sealed class SystemPlugin : JarvisPluginBase
             {
                 string path = Required(parameters, "path");
                 string? pattern = GetString(parameters, "pattern");
-                return Join(FileManager.List(path, pattern));
+                return FileManager.List(path, pattern);
             }
 
             case "system.file.read":
@@ -126,7 +126,7 @@ public sealed class SystemPlugin : JarvisPluginBase
                 string root = Required(parameters, "root");
                 string pattern = GetString(parameters, "pattern") ?? "*";
                 int maxResults = GetInt(parameters, "maxResults") ?? 50;
-                return Join(FileManager.Search(root, pattern, Math.Clamp(maxResults, 1, 500)));
+                return FileManager.Search(root, pattern, Math.Clamp(maxResults, 1, 500));
             }
 
             case "system.app.launch":
@@ -152,7 +152,7 @@ public sealed class SystemPlugin : JarvisPluginBase
 
             case "system.hardware.metrics":
             {
-                return HardwareMonitor.Snapshot().ToString();
+                return HardwareMonitor.Snapshot();
             }
 
             default:
@@ -165,12 +165,6 @@ public sealed class SystemPlugin : JarvisPluginBase
     {
         Context.Logger.LogInformation("{Plugin} ({Version}) ready.", Manifest.Id, Manifest.Version);
         return Task.CompletedTask;
-    }
-
-    private static string Join(IEnumerable<object?> items)
-    {
-        var lines = items.Select(item => item?.ToString() ?? string.Empty).ToList();
-        return lines.Count == 0 ? "(no results)" : string.Join('\n', lines);
     }
 
     private string Required(IReadOnlyDictionary<string, object?>? parameters, string key)

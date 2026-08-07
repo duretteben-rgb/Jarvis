@@ -93,6 +93,7 @@ function navigate(view) {
     chat: renderChat,
     memory: renderMemory,
     plugins: renderPlugins,
+    system: renderSystem,
     settings: renderSettings,
   };
   renderers[view]();
@@ -526,6 +527,269 @@ function openCommandModal(pluginId, command) {
       runButton.disabled = false;
     }
   });
+}
+
+/* ---------- system panel --------------------------------------- */
+
+const ICON_DIR = '<svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M4 4h6l2 2h8a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/></svg>';
+const ICON_FILE = '<svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M6 2h8l6 6v14H6V2zm8 1.5V8h4.5L14 3.5z"/></svg>';
+
+async function sysCmd(command, parameters = {}) {
+  return api(`/plugins/jarvis.system/commands/${encodeURIComponent(command)}`, {
+    method: 'POST',
+    body: JSON.stringify({ parameters }),
+  });
+}
+
+function fmtBytes(bytes) {
+  if (!bytes && bytes !== 0) return '—';
+  const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+  let value = bytes;
+  let index = 0;
+  while (value >= 1024 && index < units.length - 1) { value /= 1024; index += 1; }
+  return `${value.toFixed(value >= 100 || index === 0 ? 0 : 1)} ${units[index]}`;
+}
+
+function fmtUptime(value) {
+  const match = String(value ?? '').match(/(?:(\d+)\.)?(\d+):(\d+):(\d+)/);
+  if (!match) return String(value ?? '');
+  const days = Number(match[1] || 0);
+  const hours = Number(match[2]);
+  const minutes = Number(match[3]);
+  if (days) return `${days}d ${hours}h ${minutes}m`;
+  if (hours) return `${hours}h ${minutes}m`;
+  return `${minutes}m`;
+}
+
+function meter(percent, label, sub) {
+  const clamped = Math.max(0, Math.min(100, percent));
+  return `
+    <div class="sys-bar-row">
+      <div class="sys-bar-head"><span>${escapeHtml(label)}</span><span class="sys-bar-val">${escapeHtml(sub)}</span></div>
+      <div class="sys-bar"><div class="sys-bar-fill" style="width:${clamped}%"></div></div>
+    </div>`;
+}
+
+async function renderSystem() {
+  const container = $('#view-system');
+  container.innerHTML = `
+    <div class="page-head">
+      <div class="page-title">System</div>
+      <div class="page-subtitle">PC control panel — hardware, processes, files and applications.</div>
+    </div>
+    <div class="card sys-card">
+      <div class="card-title"><span>Hardware</span><button class="btn btn-ghost" id="sys-hw-refresh">Refresh</button></div>
+      <div id="sys-hardware"><div class="spinner"></div></div>
+    </div>
+    <div class="card sys-card">
+      <div class="card-title"><span>Processes</span><button class="btn btn-ghost" id="sys-proc-refresh">Refresh</button></div>
+      <div class="sys-toolbar">
+        <input id="sys-proc-q" type="search" placeholder="filter by name or pid">
+      </div>
+      <div id="sys-proc-status" class="sys-status" hidden></div>
+      <div id="sys-processes"><div class="spinner"></div></div>
+    </div>
+    <div class="card sys-card">
+      <div class="card-title"><span>Files</span><button class="btn btn-ghost" id="sys-file-up">Up one level</button></div>
+      <div class="sys-toolbar">
+        <input id="sys-file-path" type="text" placeholder="directory path" value="/workspace">
+        <button class="btn btn-primary" id="sys-file-go">Open</button>
+      </div>
+      <div id="sys-files"><div class="spinner"></div></div>
+    </div>
+    <div class="card sys-card">
+      <div class="card-title"><span>Applications</span></div>
+      <div class="sys-form-row">
+        <div class="sys-form">
+          <input id="sys-app-name" type="text" placeholder="app name or path">
+          <input id="sys-app-args" type="text" placeholder="arguments (optional)">
+          <button class="btn btn-primary" id="sys-app-launch">Launch</button>
+        </div>
+        <div class="sys-form">
+          <input id="sys-stop-name" type="text" placeholder="app name to stop">
+          <button class="btn btn-ghost" id="sys-app-stop">Stop</button>
+          <button class="btn btn-ghost" id="sys-app-check">Check running</button>
+        </div>
+      </div>
+      <div id="sys-app-status" class="sys-status" hidden></div>
+    </div>`;
+
+  try {
+    state.plugins = await api('/plugins');
+    if (!state.plugins.some((plugin) => plugin.id === 'jarvis.system')) {
+      throw new Error('jarvis.system plugin is not loaded.');
+    }
+  } catch (error) {
+    container.innerHTML = `<div class="page-head"><div class="page-title">System</div></div><div class="card"><div class="empty-state">${escapeHtml(error.message)}</div></div>`;
+    return;
+  }
+
+  const stateful = {
+    files: '/workspace',
+    processQuery: '',
+  };
+
+  const showStatus = (target, kind, text) => {
+    const box = $(target);
+    box.hidden = false;
+    box.className = `sys-status ${kind}`;
+    box.textContent = text;
+  };
+
+  const loadHardware = async () => {
+    const box = $('#sys-hardware');
+    try {
+      const response = await sysCmd('system.hardware.metrics');
+      if (!response.data) { box.textContent = response.result; return; }
+      const d = response.data;
+      const memPercent = d.memoryTotalBytes ? (1 - d.memoryAvailableBytes / d.memoryTotalBytes) * 100 : 0;
+      const memUsed = d.memoryTotalBytes - d.memoryAvailableBytes;
+      box.innerHTML =
+        meter(d.cpuPercent, 'CPU', `${d.cpuPercent.toFixed(1)}%`) +
+        meter(memPercent, 'Memory', `${fmtBytes(memUsed)} / ${fmtBytes(d.memoryTotalBytes)}`) +
+        d.disks.map((disk) => {
+          const percent = disk.totalBytes ? (1 - disk.freeBytes / disk.totalBytes) * 100 : 0;
+          return meter(percent, `Disk ${disk.name}`, `${fmtBytes(disk.totalBytes - disk.freeBytes)} / ${fmtBytes(disk.totalBytes)}`);
+        }).join('') +
+        `<div class="sys-meta">Host ${escapeHtml(d.hostName)} · ${escapeHtml(d.operatingSystem)} · up ${escapeHtml(fmtUptime(d.uptime))}</div>`;
+    } catch (error) {
+      box.innerHTML = `<div class="empty-state">${escapeHtml(error.message)}</div>`;
+    }
+  };
+
+  const loadProcesses = async (query) => {
+    const box = $('#sys-processes');
+    try {
+      const response = await sysCmd('system.process.list', { name: query, limit: 100 });
+      const processes = response.data || [];
+      if (!processes.length) { box.innerHTML = '<div class="empty-state">No processes found.</div>'; return; }
+      box.innerHTML = `
+        <div class="sys-table">
+          <div class="sys-row sys-row-head"><span>Process</span><span>PID</span><span>Memory</span><span>CPU (s)</span><span>Threads</span><span></span></div>
+          ${processes.map((process) => `
+            <div class="sys-row">
+              <span class="sys-name" title="${escapeHtml(process.path || '')}">${escapeHtml(process.name)}</span>
+              <span class="sys-mono">${process.pid}</span>
+              <span>${fmtBytes(process.memoryBytes)}</span>
+              <span>${(process.cpuSeconds || 0).toFixed(1)}</span>
+              <span>${process.threads}</span>
+              <span><button class="btn btn-ghost sys-kill" data-pid="${process.pid}" data-name="${escapeHtml(process.name)}">Kill</button></span>
+            </div>`).join('')}
+        </div>`;
+      $$('.sys-kill', box).forEach((button) => button.addEventListener('click', () => {
+        killProcess(button.dataset.pid, button.dataset.name, loadProcesses, stateful, showStatus);
+      }));
+    } catch (error) {
+      box.innerHTML = `<div class="empty-state">${escapeHtml(error.message)}</div>`;
+    }
+  };
+
+  const loadFiles = async (path) => {
+    const box = $('#sys-files');
+    stateful.files = path;
+    $('#sys-file-path').value = path;
+    try {
+      const response = await sysCmd('system.file.list', { path });
+      const entries = response.data || [];
+      box.innerHTML = `
+        <div class="sys-path">${escapeHtml(path)}</div>
+        ${entries.length ? `<div class="sys-files-list">
+          ${entries.map((entry) => entry.isDirectory
+            ? `<div class="sys-file sys-dir" data-path="${escapeHtml(entry.path)}">${ICON_DIR}<span>${escapeHtml(entry.path)}</span></div>`
+            : `<div class="sys-file" data-path="${escapeHtml(entry.path)}">${ICON_FILE}<span>${escapeHtml(entry.path)}</span><span class="sys-file-meta">${fmtBytes(entry.size)} · ${escapeHtml(String(entry.lastModified).slice(0, 10))}</span></div>`).join('')}
+        </div>` : '<div class="empty-state">Empty directory.</div>'}
+        <div id="sys-file-preview" class="sys-file-preview" hidden></div>`;
+      $$('.sys-file', box).forEach((row) => row.addEventListener('click', () => onFileRowClick(row, stateful, loadFiles)));
+    } catch (error) {
+      box.innerHTML = `<div class="empty-state">${escapeHtml(error.message)}</div>`;
+    }
+  };
+
+  const onFileRowClick = async (row, context, refresh) => {
+    const path = row.dataset.path;
+    const preview = $('#sys-file-preview');
+    if (row.classList.contains('sys-dir')) {
+      preview.hidden = true;
+      await refresh(path);
+      return;
+    }
+    try {
+      const response = await sysCmd('system.file.read', { path, maxBytes: 8192 });
+      preview.hidden = false;
+      preview.textContent = response.result;
+      preview.scrollIntoView({ block: 'nearest' });
+    } catch (error) {
+      preview.hidden = false;
+      preview.textContent = error.message;
+    }
+  };
+
+  const killProcess = async (pid, name, refresh, context, status) => {
+    if (!window.confirm(`Stop process ${name} (pid ${pid})?`)) return;
+    try {
+      const response = await sysCmd('system.process.kill', { id: pid });
+      status('#sys-proc-status', 'ok', response.result);
+    } catch (error) {
+      status('#sys-proc-status', 'err', error.message);
+    }
+    await refresh(context.processQuery);
+  };
+
+  $('#sys-hw-refresh').addEventListener('click', loadHardware);
+  $('#sys-proc-refresh').addEventListener('click', () => {
+    stateful.processQuery = $('#sys-proc-q').value.trim();
+    loadProcesses(stateful.processQuery);
+  });
+  $('#sys-proc-q').addEventListener('keydown', (event) => {
+    if (event.key === 'Enter') {
+      stateful.processQuery = event.target.value.trim();
+      loadProcesses(stateful.processQuery);
+    }
+  });
+  $('#sys-file-go').addEventListener('click', () => loadFiles($('#sys-file-path').value.trim() || '/'));
+  $('#sys-file-path').addEventListener('keydown', (event) => {
+    if (event.key === 'Enter') loadFiles(event.target.value.trim() || '/');
+  });
+  $('#sys-file-up').addEventListener('click', () => {
+    const current = stateful.files || '/';
+    const parent = current === '/' ? '/' : current.replace(/[\/\\][^\/\\]*$/, '') || '/';
+    loadFiles(parent);
+  });
+  $('#sys-app-launch').addEventListener('click', async () => {
+    const name = $('#sys-app-name').value.trim();
+    if (!name) { showStatus('#sys-app-status', 'err', 'Enter an application name or path.'); return; }
+    const args = $('#sys-app-args').value.trim();
+    try {
+      const response = await sysCmd('system.app.launch', { name, arguments: args });
+      showStatus('#sys-app-status', 'ok', response.result);
+    } catch (error) {
+      showStatus('#sys-app-status', 'err', error.message);
+    }
+  });
+  $('#sys-app-stop').addEventListener('click', async () => {
+    const name = $('#sys-stop-name').value.trim();
+    if (!name) { showStatus('#sys-app-status', 'err', 'Enter an application name to stop.'); return; }
+    try {
+      const response = await sysCmd('system.app.stop', { name });
+      showStatus('#sys-app-status', 'ok', response.result);
+    } catch (error) {
+      showStatus('#sys-app-status', 'err', error.message);
+    }
+  });
+  $('#sys-app-check').addEventListener('click', async () => {
+    const name = $('#sys-stop-name').value.trim();
+    if (!name) { showStatus('#sys-app-status', 'err', 'Enter an application name to check.'); return; }
+    try {
+      const response = await sysCmd('system.app.running', { name });
+      showStatus('#sys-app-status', 'ok', response.result);
+    } catch (error) {
+      showStatus('#sys-app-status', 'err', error.message);
+    }
+  });
+
+  loadHardware();
+  loadProcesses('');
+  loadFiles('/workspace');
 }
 
 /* ---------- settings ------------------------------------------ */
