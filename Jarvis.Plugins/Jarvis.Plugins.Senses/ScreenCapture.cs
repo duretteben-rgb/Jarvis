@@ -13,21 +13,32 @@ internal sealed record CaptureOutcome(string? ImagePath, string Detail)
 /// </summary>
 internal static class ScreenCapture
 {
-    /// <summary>True when an X display appears to be available.</summary>
+    /// <summary>
+    /// True when a graphical session appears to be available. Windows always has a desktop
+    /// session; Linux/macOS expose one through the X11 <c>DISPLAY</c> (or Wayland) variable.
+    /// </summary>
     public static bool HasDisplay()
-        => !string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("DISPLAY"));
+    {
+        if (OperatingSystem.IsWindows())
+        {
+            return true;
+        }
+
+        return !string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("DISPLAY"));
+    }
 
     /// <summary>Captures the screen into <paramref name="outputDirectory"/>.</summary>
     public static async Task<CaptureOutcome> CaptureAsync(
         string outputDirectory,
         CancellationToken cancellationToken)
     {
-        string? display = Environment.GetEnvironmentVariable("DISPLAY");
-        if (string.IsNullOrWhiteSpace(display))
+        if (!HasDisplay())
         {
             return new CaptureOutcome(
                 null,
-                "Screen capture needs a graphical session, but DISPLAY is not set (headless environment).");
+                OperatingSystem.IsWindows()
+                    ? "Screen capture needs a desktop session, but none could be detected."
+                    : "Screen capture needs a graphical session, but DISPLAY is not set (headless environment).");
         }
 
         Directory.CreateDirectory(outputDirectory);
@@ -61,6 +72,6 @@ internal static class ScreenCapture
 
         return new CaptureOutcome(
             null,
-            $"No screen capture tool (scrot, import, xwd) produced a capture for DISPLAY={display}.");
+            "No screen capture tool (scrot, import, xwd) is available or produced a capture. Install ImageMagick (import) or scrot to enable screen capture.");
     }
 }
