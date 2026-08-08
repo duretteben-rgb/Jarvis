@@ -739,6 +739,62 @@ select option { background: var(--mica-b); color: var(--text); }
   border: 1px solid color-mix(in srgb, var(--danger) 35%, transparent);
 }
 
+.sys-status.warn {
+  color: var(--warn);
+  background: color-mix(in srgb, var(--warn) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--warn) 35%, transparent);
+}
+
+.sys-form select {
+  flex: 1;
+  min-width: 180px;
+  padding: 8px 10px;
+  border-radius: var(--radius);
+  border: 1px solid var(--card-border);
+  background: var(--field-bg);
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+}
+
+.code-output {
+  margin: 0;
+  padding: 12px;
+  border-radius: var(--radius);
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  font-family: var(--mono, 'Cascadia Code', Consolas, monospace);
+  font-size: 12px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 420px;
+  overflow: auto;
+}
+
+.vision-preview img {
+  display: block;
+  max-width: 100%;
+  max-height: 220px;
+  border-radius: var(--radius);
+  border: 1px solid var(--card-border);
+  margin-top: 10px;
+}
+
+.vision-result {
+  margin-top: 10px;
+  padding: 12px;
+  border-radius: var(--radius);
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  font-size: 13px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 320px;
+  overflow: auto;
+}
+
 /* Animations --------------------------------------------------- */
 @keyframes rise {
   from { opacity: 0; transform: translateY(6px); }

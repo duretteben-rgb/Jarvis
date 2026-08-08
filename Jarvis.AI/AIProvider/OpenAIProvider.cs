@@ -105,7 +105,7 @@ public sealed class OpenAIProvider : IAIProvider
         string payload = JsonSerializer.Serialize(new
         {
             model,
-            messages = messages.Select(m => new { role = m.Role, content = m.Content }),
+            messages = messages.Select(m => new { role = m.Role, content = SerializeContent(m) }),
             temperature = temperature ?? 0.7d,
             max_tokens = maxTokens,
             stream = false,
@@ -175,7 +175,7 @@ public sealed class OpenAIProvider : IAIProvider
         string payload = JsonSerializer.Serialize(new
         {
             model,
-            messages = messages.Select(m => new { role = m.Role, content = m.Content }),
+            messages = messages.Select(m => new { role = m.Role, content = SerializeContent(m) }),
             temperature = temperature ?? 0.7d,
             max_tokens = maxTokens,
             stream = true,
@@ -233,6 +233,25 @@ public sealed class OpenAIProvider : IAIProvider
         => root.TryGetProperty(propertyName, out JsonElement element) && element.ValueKind == JsonValueKind.Number
             ? element.GetInt32()
             : null;
+
+    /// <summary>
+    /// Serializes a message's content. Messages without an image stay plain strings (so the
+    /// request body is unchanged for text-only traffic); messages with an image become the
+    /// OpenAI-compatible multi-part content array consumed by vision models.
+    /// </summary>
+    private static object SerializeContent(ChatMessage message)
+    {
+        if (message.Image is null)
+        {
+            return message.Content;
+        }
+
+        return new object[]
+        {
+            new { type = "text", text = message.Content },
+            new { type = "image_url", image_url = new { url = message.Image.ToDataUri() } },
+        };
+    }
 
     private static string? GetStringOrNull(JsonElement root, string propertyName)
         => root.TryGetProperty(propertyName, out JsonElement element) && element.ValueKind == JsonValueKind.String

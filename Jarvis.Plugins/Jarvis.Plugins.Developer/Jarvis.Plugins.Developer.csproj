@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>Jarvis.Plugins.Developer</RootNamespace>
+    <AssemblyName>Jarvis.Plugins.Developer</AssemblyName>
+    <Description>JARVIS STUDIO plugin: scaffold, generate, build, test and run developer projects.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Jarvis.SDK\Jarvis.SDK.csproj" />
+  </ItemGroup>
+
+</Project>

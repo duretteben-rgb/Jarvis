@@ -142,9 +142,13 @@ delegated to pluggable providers.
 
 Routing: a `ChatRequest` optionally names a model id (from the `AI:Models` list) or a task
 kind (simple/complex/reasoning/coding/summarization). The router prefilters providers by cached
-health, orders local-first when `PreferLocal` is set, and matches model definitions by task
-kind tags. If a provider fails, the service falls back to the next healthy candidate, so the
-assistant keeps working offline even when the cloud is unreachable.
+health, orders local-first when the request's `PreferLocal` is set (so SDK callers can force
+cloud routing per request), and matches model definitions by task kind tags. If a provider
+fails, the service falls back to the next healthy candidate, so the assistant keeps working
+offline even when the cloud is unreachable. Messages support multimodal input: `ChatMessage.UserWithImage`
+carries a `ChatImage` (mime type + base64), which `OpenAIProvider` serializes as an OpenAI
+`image_url` content part and `OllamaProvider` as an `images` array, enabling vision
+(`vision.analyze`) through the same routing pipeline.
 
 ### Jarvis.API
 
@@ -172,7 +176,10 @@ The premium desktop shell: an Electron app with a Windows 11 Fluent / Mica-inspi
 (frameless window, custom titlebar, acrylic backdrop, light/dark themes). Views: Dashboard,
 Assistant (streaming chat with a caret indicator), Memory (entries + preferences), Plugins
 (command chips), System (PC control: hardware meters, searchable processes with kill actions,
-a file browser with inline previews, and an application launcher) and Settings. It talks to
+a file browser with inline previews, and an application launcher), Studio (scaffold, generate,
+build, test and run developer projects against `jarvis.developer`), Senses (speak with browser
+speech fallback, transcribe, vision analysis with image preview, and screen capture against
+`jarvis.senses`) and Settings. It talks to
 `Jarvis.API` via `window.jarvis` (contextBridge) and can spawn the API host itself if it is not
 already running.
 
@@ -189,6 +196,16 @@ Built-in plugins (each is a feature added without touching Core):
 - `Jarvis.Plugins.System` — process/file/hardware/application control: list and stop processes,
   list/read/write/copy/move/search files, launch/stop apps and report CPU/RAM/disk/uptime
   metrics (`processes`, `files`, `system`).
+- `Jarvis.Plugins.Developer` — JARVIS STUDIO developer agent: scaffold dotnet/node/python
+  projects, read/write project files, generate code through `IAIService` (cloud-routed,
+  `TaskKind.Coding`, code fences stripped) and build/test/run projects with a timeout and
+  whole-tree kill (`processes`, `files`, `ai`). Projects live under `Jarvis:Studio:Root`
+  (default: `<AppContext.BaseDirectory>/projects`).
+- `Jarvis.Plugins.Senses` — voice & vision: `voice.speak` (local TTS via espeak-ng, with a
+  structured fallback so the HUB can use browser speech), `voice.transcribe` (whisper CLI when
+  present), `vision.analyze` (image path, data URI or URL encoded as a `ChatImage` and sent to
+  a multimodal model) and `vision.screen` (screen capture that degrades on headless hosts)
+  (`ai`, `files`, `network`).
 - `Jarvis.Plugins.Automation` — register, list and run automations (`automation`).
 - `Jarvis.Plugins.AI` — semantic memory commands backed by `IMemoryService` (`ai`, `memory`).
 - `Jarvis.Plugins.Example` — reference plugin demonstrating the SDK and the EventBus.

@@ -94,6 +94,8 @@ function navigate(view) {
     memory: renderMemory,
     plugins: renderPlugins,
     system: renderSystem,
+    studio: renderStudio,
+    senses: renderSenses,
     settings: renderSettings,
   };
   renderers[view]();
@@ -541,6 +543,13 @@ async function sysCmd(command, parameters = {}) {
   });
 }
 
+async function pluginCmd(pluginId, command, parameters = {}) {
+  return api(`/plugins/${encodeURIComponent(pluginId)}/commands/${encodeURIComponent(command)}`, {
+    method: 'POST',
+    body: JSON.stringify({ parameters }),
+  });
+}
+
 function fmtBytes(bytes) {
   if (!bytes && bytes !== 0) return '—';
   const units = ['B', 'KB', 'MB', 'GB', 'TB'];
@@ -790,6 +799,299 @@ async function renderSystem() {
   loadHardware();
   loadProcesses('');
   loadFiles('/workspace');
+}
+
+/* ---------- studio ------------------------------------------- */
+
+async function renderStudio() {
+  const container = $('#view-studio');
+  container.innerHTML = `
+    <div class="page-head">
+      <div class="page-title">JARVIS Studio</div>
+      <div class="page-subtitle">Scaffold, generate, build, test and run developer projects.</div>
+    </div>
+    <div class="grid grid-2">
+      <div class="card sys-card">
+        <div class="card-title">New project</div>
+        <div class="sys-form">
+          <input id="st-name" type="text" placeholder="project name (e.g. MyApp)">
+          <select id="st-template">
+            <option value="dotnet-console">C# console (dotnet)</option>
+            <option value="node-app">Node.js app</option>
+            <option value="python-app">Python app</option>
+          </select>
+          <button class="btn btn-primary" id="st-create">Create</button>
+        </div>
+        <div id="st-create-status" class="sys-status" hidden></div>
+      </div>
+      <div class="card sys-card">
+        <div class="card-title">AI generate code</div>
+        <div class="sys-form">
+          <input id="st-gen-path" type="text" placeholder="project file path, e.g. MyApp/Program.cs">
+          <input id="st-gen-prompt" type="text" placeholder="describe the code to write">
+          <button class="btn btn-primary" id="st-generate">Generate</button>
+        </div>
+        <div id="st-gen-status" class="sys-status" hidden></div>
+      </div>
+    </div>
+    <div class="card sys-card">
+      <div class="card-title"><span>Projects</span><button class="btn btn-ghost" id="st-refresh">Refresh</button></div>
+      <div id="st-projects"><div class="spinner"></div></div>
+    </div>
+    <div class="card sys-card">
+      <div class="card-title">Output</div>
+      <pre id="st-output" class="code-output">Select a project and action to see the output.</pre>
+    </div>`;
+
+  try {
+    state.plugins = await api('/plugins');
+    if (!state.plugins.some((plugin) => plugin.id === 'jarvis.developer')) {
+      throw new Error('jarvis.developer plugin is not loaded.');
+    }
+  } catch (error) {
+    container.innerHTML = `<div class="page-head"><div class="page-title">Studio</div></div><div class="card"><div class="empty-state">${escapeHtml(error.message)}</div></div>`;
+    return;
+  }
+
+  const showStatus = (target, kind, text) => {
+    const box = $(target);
+    box.hidden = false;
+    box.className = `sys-status ${kind}`;
+    box.textContent = text;
+  };
+
+  const setOutput = (text) => { $('#st-output').textContent = text; };
+
+  const runAction = async (action, name) => {
+    const command = {
+      info: 'developer.project.info',
+      build: 'developer.build',
+      test: 'developer.test',
+      run: 'developer.run',
+    }[action];
+    setOutput(`Running ${action} on ${name}...`);
+    try {
+      const response = await pluginCmd('jarvis.developer', command, { name });
+      setOutput(response.result);
+    } catch (error) {
+      setOutput(`Error: ${error.message}`);
+    }
+  };
+
+  const loadProjects = async () => {
+    const box = $('#st-projects');
+    try {
+      const response = await pluginCmd('jarvis.developer', 'developer.project.list');
+      const projects = (response.data || []).map((line) => line.split(' [')[0]);
+      if (!projects.length) {
+        box.innerHTML = '<div class="empty-state">No projects yet. Create one above.</div>';
+        return;
+      }
+      box.innerHTML = `
+        <div class="sys-table">
+          <div class="sys-row sys-row-head"><span>Project</span><span></span><span></span><span></span><span></span><span></span></div>
+          ${projects.map((name) => `
+            <div class="sys-row">
+              <span class="sys-name">${escapeHtml(name)}</span>
+              <span><button class="btn btn-ghost st-act" data-name="${escapeHtml(name)}" data-act="info">Info</button></span>
+              <span><button class="btn btn-ghost st-act" data-name="${escapeHtml(name)}" data-act="build">Build</button></span>
+              <span><button class="btn btn-ghost st-act" data-name="${escapeHtml(name)}" data-act="test">Test</button></span>
+              <span><button class="btn btn-ghost st-act" data-name="${escapeHtml(name)}" data-act="run">Run</button></span>
+              <span></span>
+            </div>`).join('')}
+        </div>`;
+      $$('.st-act', box).forEach((button) => button.addEventListener('click', () => {
+        runAction(button.dataset.act, button.dataset.name);
+      }));
+    } catch (error) {
+      box.innerHTML = `<div class="empty-state">${escapeHtml(error.message)}</div>`;
+    }
+  };
+
+  $('#st-create').addEventListener('click', async () => {
+    const name = $('#st-name').value.trim();
+    const template = $('#st-template').value;
+    if (!name) { showStatus('#st-create-status', 'err', 'Enter a project name.'); return; }
+    try {
+      const response = await pluginCmd('jarvis.developer', 'developer.project.create', { name, template });
+      showStatus('#st-create-status', 'ok', response.result);
+      $('#st-name').value = '';
+      await loadProjects();
+    } catch (error) {
+      showStatus('#st-create-status', 'err', error.message);
+    }
+  });
+
+  $('#st-generate').addEventListener('click', async () => {
+    const path = $('#st-gen-path').value.trim();
+    const prompt = $('#st-gen-prompt').value.trim();
+    if (!path || !prompt) { showStatus('#st-gen-status', 'err', 'Enter both a file path and a prompt.'); return; }
+    setOutput(`Generating ${path} ...`);
+    try {
+      const response = await pluginCmd('jarvis.developer', 'developer.generate', { path, prompt });
+      showStatus('#st-gen-status', 'ok', `Generated ${path}.`);
+      setOutput(response.result);
+    } catch (error) {
+      showStatus('#st-gen-status', 'err', error.message);
+      setOutput(`Error: ${error.message}`);
+    }
+  });
+
+  $('#st-refresh').addEventListener('click', loadProjects);
+  loadProjects();
+}
+
+/* ---------- senses ------------------------------------------- */
+
+function speakBrowser(text) {
+  if (!('speechSynthesis' in window)) return false;
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.lang = 'en-US';
+  window.speechSynthesis.cancel();
+  window.speechSynthesis.speak(utterance);
+  return true;
+}
+
+async function renderSenses() {
+  const container = $('#view-senses');
+  container.innerHTML = `
+    <div class="page-head">
+      <div class="page-title">Senses</div>
+      <div class="page-subtitle">Voice synthesis, transcription and computer vision for JARVIS.</div>
+    </div>
+    <div class="grid grid-2">
+      <div class="card sys-card">
+        <div class="card-title">Speak</div>
+        <div class="sys-form">
+          <input id="sn-text" type="text" placeholder="text to speak">
+          <input id="sn-voice" type="text" placeholder="voice name (optional)">
+          <button class="btn btn-primary" id="sn-speak">Speak</button>
+        </div>
+        <div id="sn-speak-status" class="sys-status" hidden></div>
+      </div>
+      <div class="card sys-card">
+        <div class="card-title">Transcribe</div>
+        <div class="sys-form">
+          <input id="sn-audio" type="text" placeholder="audio file path (requires whisper CLI)">
+          <button class="btn btn-primary" id="sn-transcribe">Transcribe</button>
+        </div>
+        <div id="sn-transcribe-status" class="sys-status" hidden></div>
+      </div>
+    </div>
+    <div class="grid grid-2" style="margin-top:14px">
+      <div class="card sys-card">
+        <div class="card-title">Vision analysis</div>
+        <div class="sys-form">
+          <input id="sn-image-url" type="text" placeholder="image URL or server path">
+          <input id="sn-image-file" type="file" accept="image/*">
+          <input id="sn-prompt" type="text" placeholder="prompt (default: describe the image)">
+          <button class="btn btn-primary" id="sn-analyze">Analyze</button>
+        </div>
+        <div id="sn-image-preview" class="vision-preview" hidden></div>
+        <div id="sn-vision-result" class="vision-result"></div>
+        <div id="sn-analyze-status" class="sys-status" hidden></div>
+      </div>
+      <div class="card sys-card">
+        <div class="card-title">Screen capture</div>
+        <div class="sys-form">
+          <input id="sn-screen-prompt" type="text" placeholder="prompt to analyze the capture (optional)">
+          <button class="btn btn-primary" id="sn-screen">Capture screen</button>
+        </div>
+        <div id="sn-screen-status" class="sys-status" hidden></div>
+      </div>
+    </div>`;
+
+  try {
+    state.plugins = await api('/plugins');
+    if (!state.plugins.some((plugin) => plugin.id === 'jarvis.senses')) {
+      throw new Error('jarvis.senses plugin is not loaded.');
+    }
+  } catch (error) {
+    container.innerHTML = `<div class="page-head"><div class="page-title">Senses</div></div><div class="card"><div class="empty-state">${escapeHtml(error.message)}</div></div>`;
+    return;
+  }
+
+  const showStatus = (target, kind, text) => {
+    const box = $(target);
+    box.hidden = false;
+    box.className = `sys-status ${kind}`;
+    box.textContent = text;
+  };
+
+  const sensesCmd = (command, parameters = {}) => pluginCmd('jarvis.senses', command, parameters);
+
+  $('#sn-speak').addEventListener('click', async () => {
+    const text = $('#sn-text').value.trim();
+    if (!text) { showStatus('#sn-speak-status', 'err', 'Enter some text to speak.'); return; }
+    const voice = $('#sn-voice').value.trim();
+    try {
+      const response = await sensesCmd('voice.speak', { text, voice });
+      if (response.data && response.data.synthesized) {
+        showStatus('#sn-speak-status', 'ok', `Synthesized locally (${response.data.audioPath}).`);
+      } else {
+        const spoken = speakBrowser(text);
+        showStatus('#sn-speak-status', 'ok', spoken
+          ? 'No local TTS; spoken via browser speech synthesis.'
+          : 'Local TTS unavailable and browser speech is not supported here.');
+      }
+    } catch (error) {
+      showStatus('#sn-speak-status', 'err', error.message);
+    }
+  });
+
+  $('#sn-transcribe').addEventListener('click', async () => {
+    const file = $('#sn-audio').value.trim();
+    if (!file) { showStatus('#sn-transcribe-status', 'err', 'Enter an audio file path.'); return; }
+    try {
+      const response = await sensesCmd('voice.transcribe', { file });
+      showStatus('#sn-transcribe-status', 'ok', (response.data && response.data.text) || response.result);
+    } catch (error) {
+      showStatus('#sn-transcribe-status', 'err', error.message);
+    }
+  });
+
+  const currentImage = { source: null };
+
+  $('#sn-image-file').addEventListener('change', async (event) => {
+    const file = event.target.files && event.target.files[0];
+    if (!file) return;
+    const dataUri = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = () => reject(new Error('Could not read the image file.'));
+      reader.readAsDataURL(file);
+    });
+    currentImage.source = dataUri;
+    $('#sn-image-url').value = file.name;
+    const preview = $('#sn-image-preview');
+    preview.hidden = false;
+    preview.innerHTML = `<img src="${dataUri}" alt="image preview">`;
+  });
+
+  $('#sn-analyze').addEventListener('click', async () => {
+    const source = currentImage.source || $('#sn-image-url').value.trim();
+    const prompt = $('#sn-prompt').value.trim() || 'Describe this image in detail.';
+    if (!source) { showStatus('#sn-analyze-status', 'err', 'Choose an image file or enter an image URL/path.'); return; }
+    $('#sn-vision-result').textContent = '';
+    showStatus('#sn-analyze-status', 'warn', 'Analyzing image...');
+    try {
+      const response = await sensesCmd('vision.analyze', { image: source, prompt });
+      $('#sn-vision-result').textContent = response.data.description || response.result;
+      showStatus('#sn-analyze-status', 'ok', `Analyzed with ${response.data.model} (${response.data.provider}).`);
+    } catch (error) {
+      showStatus('#sn-analyze-status', 'err', error.message);
+    }
+  });
+
+  $('#sn-screen').addEventListener('click', async () => {
+    const prompt = $('#sn-screen-prompt').value.trim();
+    try {
+      const response = await sensesCmd('vision.screen', prompt ? { prompt } : {});
+      showStatus('#sn-screen-status', 'ok', response.result);
+    } catch (error) {
+      showStatus('#sn-screen-status', 'err', error.message);
+    }
+  });
 }
 
 /* ---------- settings ------------------------------------------ */

@@ -170,7 +170,9 @@ public sealed class OllamaProvider : IAIProvider
         return JsonSerializer.Serialize(new
         {
             model = string.IsNullOrWhiteSpace(model) ? _options.Model : model,
-            messages = messages.Select(m => new { role = m.Role, content = m.Content }),
+            messages = messages.Select(m => m.Image is null
+                ? new { role = m.Role, content = m.Content }
+                : (object)new { role = m.Role, content = m.Content, images = new[] { m.Image.Base64Data } }),
             stream,
             options = new { temperature = temperature ?? 0.7d },
             max_tokens = maxTokens,

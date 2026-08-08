@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>Jarvis.Plugins.Senses</RootNamespace>
+    <AssemblyName>Jarvis.Plugins.Senses</AssemblyName>
+    <Description>JARVIS Senses plugin: voice synthesis, transcription and computer vision.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Jarvis.SDK\Jarvis.SDK.csproj" />
+  </ItemGroup>
+
+</Project>

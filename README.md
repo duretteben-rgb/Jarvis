@@ -3,12 +3,15 @@
 A modular, extensible personal AI assistant platform inspired by JARVIS. Written in
 C# on .NET 8.
 
-> Status: **plugin system + memory + local AI engine + HUB shell + PC control**. The repository
-> contains the modular foundation (Core, Runtime, SDK, plugin system with
-> permissions/versioning/events, dynamic loading), the JARVIS memory system (SQLite, local
-> embeddings, vector search, preferences), a local-first AI engine (Ollama + OpenAI-compatible
-> providers, model routing, conversation context), a REST/SSE API host, an Electron HUB with a
-> Windows 11 Fluent/Mica UI, and a PC-control plugin (processes, files, hardware, apps).
+> Status: **plugin system + memory + local AI engine + HUB shell + PC control + developer
+> agent + voice & vision**. The repository contains the modular foundation (Core, Runtime, SDK,
+> plugin system with permissions/versioning/events, dynamic loading), the JARVIS memory system
+> (SQLite, local embeddings, vector search, preferences), a local-first AI engine (Ollama +
+> OpenAI-compatible providers, model routing, conversation context, multimodal vision), a
+> REST/SSE API host, an Electron HUB with a Windows 11 Fluent/Mica UI, a PC-control plugin
+> (processes, files, hardware, apps), a developer-agent plugin (JARVIS STUDIO: scaffold,
+> generate, build, test and run projects) and a voice & vision plugin (TTS, STT and computer
+> vision that degrades gracefully on headless hosts).
 
 ## Structure
 
@@ -21,7 +24,7 @@ Jarvis/
 ├── Jarvis.AI       # AI engine: Ollama + OpenAI-compatible providers, model router, context
 ├── Jarvis.API      # REST + SSE host: memory, plugins, AI (also serves the HUB renderer)
 ├── Jarvis.Hub      # Electron shell (Windows 11 Fluent/Mica) wrapping the API renderer
-├── Jarvis.Plugins  # Plugin system (Example, Minecraft, Desktop, System, Automation, AI)
+├── Jarvis.Plugins  # Plugin system (Example, Minecraft, Desktop, System, Automation, AI, Developer, Senses)
 └── Jarvis.UI       # Desktop interface (Avalonia)
 ```
 
@@ -69,6 +72,9 @@ The AI engine works offline with a local Ollama server
 - HUB includes a System panel (hardware meters, searchable process table with kill actions,
   file browser with inline previews, and an application launcher) driven by the
   `jarvis.system` plugin over the REST API.
+- HUB includes a Studio panel (create/build/test/run projects, AI code generation) driven by
+  the `jarvis.developer` plugin, and a Senses panel (speak/transcribe/vision/screen) driven by
+  the `jarvis.senses` plugin.
 - Publishes heartbeat events on the EventBus; plugins and the UI react to them.
 - Shuts down gracefully (Ctrl+C stops the runtime, stops plugins, unloads assemblies).
 
@@ -79,6 +85,8 @@ The AI engine works offline with a local Ollama server
 | Minecraft | `minecraft.launch`, `minecraft.stop`, `minecraft.status` | processes, files |
 | Desktop | `desktop.notify`, `desktop.screenshot` | ui, system |
 | System | `system.process.list`/`info`/`start`/`kill`, `system.file.list`/`read`/`write`/`copy`/`move`/`search`, `system.app.launch`/`stop`/`running`, `system.hardware.metrics` | processes, files, system |
+| Developer (JARVIS STUDIO) | `developer.project.create`/`list`/`info`, `developer.file.write`/`read`, `developer.generate`, `developer.build`/`test`/`run` | processes, files, ai |
+| Senses | `voice.speak`, `voice.transcribe`, `vision.analyze`, `vision.screen` | ai, files, network |
 | Automation | `automation.list`, `automation.add`, `automation.run` | automation |
 | AI | `ai.remember`, `ai.search`, `ai.set-preference`, `ai.get-preference` | ai, memory |
 

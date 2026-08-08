@@ -122,7 +122,7 @@ public sealed class ModelRouter
         }
 
         IEnumerable<(ModelDefinition Definition, IAIProvider Provider, int Score)> ordered = available
-            .OrderByDescending(entry => entry.Provider.IsLocal == _options.Routing.PreferLocal)
+            .OrderByDescending(entry => entry.Provider.IsLocal == request.PreferLocal)
             .ThenByDescending(entry => entry.Score);
 
         return ordered
