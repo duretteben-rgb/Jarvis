@@ -15,8 +15,16 @@ public static class Program
 {
     public static async Task<int> Main(string[] args)
     {
-        WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
-        builder.WebHost.UseContentRoot(AppContext.BaseDirectory);
+        // Anchor the content root to the application directory so the host finds its plugins,
+        // wwwroot renderer and appsettings regardless of the launch working directory (dotnet run
+        // from the repo root, direct dll launch, or the Electron shell).
+        WebApplicationBuilder builder = WebApplication.CreateBuilder(
+            new WebApplicationOptions
+            {
+                Args = args,
+                ContentRootPath = AppContext.BaseDirectory,
+            });
+
         builder.Configuration.AddJsonFile("appsettings.local.json", optional: true, reloadOnChange: false);
 
         JarvisHostFactory.Configure(builder.Logging, builder.Services);
