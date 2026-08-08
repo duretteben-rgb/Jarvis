@@ -1,15 +1,49 @@
 {
   "name": "jarvis-hub",
   "productName": "JARVIS HUB",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Premium JARVIS HUB interface with a Windows 11 Fluent/Mica design. Communicates with the JARVIS OS core through the local JARVIS.API web host.",
   "main": "main.js",
   "author": "JARVIS Team",
   "license": "MIT",
   "scripts": {
-    "start": "electron ."
+    "start": "electron .",
+    "dist": "electron-builder"
   },
   "devDependencies": {
-    "electron": "^32.0.0"
+    "electron": "^32.0.0",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "com.jarvis.os",
+    "productName": "JARVIS HUB",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "renderer/**/*"
+    ],
+    "extraResources": [
+      {
+        "from": "../Jarvis.API/bin/Release/net8.0",
+        "to": "api",
+        "filter": [
+          "**/*",
+          "!**/*.pdb"
+        ]
+      }
+    ],
+    "win": {
+      "target": [
+        "nsis"
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true
+    }
   }
 }

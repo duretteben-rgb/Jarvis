@@ -47,9 +47,27 @@ dotnet run --project Jarvis.Runtime
 # Run the web/API host (serves the HUB UI at http://localhost:5178)
 dotnet run --project Jarvis.API
 
-# Desktop HUB
+# Desktop HUB (real app, not a browser tab)
 cd Jarvis.Hub && npm install && npm start
 ```
+
+`npm start` opens the HUB as a frameless desktop app (Windows 11 Fluent style) and
+auto-starts the local JARVIS.API host when it is not already running.
+
+### Build a Windows installer (.exe)
+
+```bash
+# 1. Build the backend in Release (this also deploys all plugins)
+dotnet build Jarvis.sln -c Release
+
+# 2. Package the installer (Windows: produces dist/JARVIS HUB Setup 0.4.0.exe)
+cd Jarvis.Hub && npm run dist
+```
+
+The installer bundles the API host, all plugins and the HUB UI into a single app — no browser
+needed. Requires the .NET 8 runtime on the target machine (or publish the API self-contained
+for a fully portable install). Note: `appsettings.local.json` is gitignored and not bundled;
+add your own AI keys after installation if you want cloud providers.
 
 The AI engine works offline with a local Ollama server
 (`--AI:Ollama:Enabled=true --AI:Ollama:BaseUrl=http://localhost:11434`). For cloud models set

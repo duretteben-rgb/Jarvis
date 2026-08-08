@@ -33,6 +33,7 @@ function startApiIfNeeded() {
     }
 
     const candidates = [
+      path.join(process.resourcesPath, 'api', 'Jarvis.API.dll'),
       path.join(process.resourcesPath, '..', 'Jarvis.API', 'Jarvis.API.dll'),
       path.join(__dirname, '..', 'Jarvis.API', 'bin', 'Release', 'net8.0', 'Jarvis.API.dll'),
       path.join(__dirname, '..', 'Jarvis.API', 'bin', 'Debug', 'net8.0', 'Jarvis.API.dll'),
@@ -43,9 +44,12 @@ function startApiIfNeeded() {
       return;
     }
 
+    // detached so the API keeps running when the app window closes; windowsHide keeps the
+    // console window from popping up on Windows.
     const child = spawn('dotnet', [dllPath], {
       stdio: 'ignore',
       detached: true,
+      windowsHide: true,
       env: { ...process.env, ASPNETCORE_URLS: API_URL },
     });
     child.unref();
