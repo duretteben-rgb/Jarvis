@@ -65,7 +65,16 @@ cd Jarvis.Hub && npm run dist
 ```
 
 The installer bundles the API host, all plugins and the HUB UI into a single app — no browser
-needed. Requires the .NET 8 runtime on the target machine (or publish the API self-contained
+needed. It installs Start-menu/desktop shortcuts with the JARVIS icon and launching the app
+shows **no terminal window** (the API host is started hidden in the background via
+`windowsHide`).
+
+> Icon note: the JARVIS icon ships as `Jarvis.Hub/build/icon.ico` (used by the installer and
+> shortcuts). To also replace the Electron default icon embedded in the `.exe` itself, remove
+> `signAndEditExecutable: false` from `package.json` and rebuild — this requires Windows
+> Developer Mode (or an admin shell) so electron-builder can embed the icon.
+
+Requires the .NET 8 runtime on the target machine (or publish the API self-contained
 for a fully portable install). Note: `appsettings.local.json` is gitignored and not bundled;
 add your own AI keys after installation if you want cloud providers.
 
