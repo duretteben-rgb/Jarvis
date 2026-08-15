@@ -8,7 +8,8 @@
   "license": "MIT",
   "scripts": {
     "start": "electron .",
-    "dist": "electron-builder"
+    "dist": "electron-builder --win nsis --publish never",
+    "release": "electron-builder --win nsis --publish always"
   },
   "devDependencies": {
     "electron": "^32.0.0",
@@ -49,6 +50,13 @@
       "createDesktopShortcut": true,
       "installerIcon": "build/icon.ico",
       "uninstallerIcon": "build/icon.ico"
-    }
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "duretteben-rgb",
+        "repo": "Jarvis"
+      }
+    ]
   }
 }
